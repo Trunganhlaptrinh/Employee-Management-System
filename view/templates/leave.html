@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Nghỉ phép{% endblock %}
+
+{% block content %}
+<div class="page">
+    <h1>🏖️ Nghỉ phép</h1>
+    
+    {% if error %}
+    <div class="alert error">{{ error }}</div>
+    {% endif %}
+    
+    {% if success %}
+    <div class="alert success">{{ success }}</div>
+    {% endif %}
+    
+    <div class="leave-form">
+        <h2>Đăng ký nghỉ phép</h2>
+        <form method="POST" action="/leave/request">
+            <div class="form-group">
+                <label>Từ ngày</label>
+                <input type="date" name="from_date" required>
+            </div>
+            <div class="form-group">
+                <label>Đến ngày</label>
+                <input type="date" name="to_date" required>
+            </div>
+            <div class="form-group">
+                <label>Lý do</label>
+                <textarea name="reason" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Gửi yêu cầu</button>
+        </form>
+    </div>
+    
+    <div class="leave-history">
+        <h2>Lịch sử nghỉ phép</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Từ ngày</th>
+                    <th>Đến ngày</th>
+                    <th>Lý do</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leave in leaves %}
+                <tr>
+                    <td>{{ leave[2] }}</td>
+                    <td>{{ leave[3] }}</td>
+                    <td>{{ leave[4] }}</td>
+                    <td>
+                        <span class="status-badge {{ 
+                            'success' if leave[5] == 'approved' else 
+                            'danger' if leave[5] == 'rejected' else 
+                            'warning' 
+                        }}">
+                            {{ leave[5] }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">Chưa có yêu cầu</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

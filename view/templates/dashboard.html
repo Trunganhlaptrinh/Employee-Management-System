@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Xin chào, {{ user.name }}! 👋</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>📅 Hôm nay</h3>
+            <p>{{ today }}</p>
+            {% if attendance %}
+            <span class="status-badge success">✅ Đã check-in lúc {{ attendance[3] }}</span>
+            {% else %}
+            <span class="status-badge warning">⏳ Chưa check-in</span>
+            {% endif %}
+        </div>
+        
+        <div class="stat-card">
+            <h3>📊 Điểm danh tháng này</h3>
+            <p>{{ work_days }}/{{ total_days }} ngày</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>🏖️ Nghỉ phép</h3>
+            <p>Đã duyệt: {{ approved_leaves }}</p>
+            <p>Chờ duyệt: {{ pending_leaves }}</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>💰 Lương tháng này</h3>
+            <p>{{ salary|default('Chưa tính') }}</p>
+        </div>
+    </div>
+    
+    <div class="quick-actions">
+        <h2>Hành động nhanh</h2>
+        <div class="action-buttons">
+            <a href="/attendance" class="btn btn-success">✅ Điểm danh</a>
+            <a href="/leave" class="btn btn-warning">📝 Nghỉ phép</a>
+            <a href="/salary" class="btn btn-info">💰 Xem lương</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

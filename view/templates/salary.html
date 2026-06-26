@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Lương thưởng{% endblock %}
+
+{% block content %}
+<div class="page">
+    <h1>💰 Lương thưởng</h1>
+    
+    <div class="salary-summary">
+        <h2>Tháng {{ month }}</h2>
+        {% if salary %}
+        <div class="salary-details">
+            <div class="salary-item">
+                <span>Lương cơ bản:</span>
+                <span>{{ "{:,.0f}".format(salary.base_salary) }} VND</span>
+            </div>
+            <div class="salary-item">
+                <span>Số ngày công:</span>
+                <span>{{ salary.work_days }} ngày</span>
+            </div>
+            <div class="salary-item">
+                <span>Thưởng:</span>
+                <span class="positive">+{{ "{:,.0f}".format(salary.bonus) }} VND</span>
+            </div>
+            <div class="salary-item">
+                <span>Khấu trừ:</span>
+                <span class="negative">-{{ "{:,.0f}".format(salary.deduction) }} VND</span>
+            </div>
+            <div class="salary-item total">
+                <span>Tổng lương:</span>
+                <span>{{ "{:,.0f}".format(salary.total) }} VND</span>
+            </div>
+        </div>
+        {% else %}
+        <p>Chưa có dữ liệu lương cho tháng này</p>
+        <form method="POST" action="/salary/calculate">
+            <input type="hidden" name="month" value="{{ month }}">
+            <button type="submit" class="btn btn-primary">Tính lương</button>
+        </form>
+        {% endif %}
+    </div>
+    
+    <div class="salary-history">
+        <h2>Lịch sử lương</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tháng</th>
+                    <th>Lương cơ bản</th>
+                    <th>Thưởng</th>
+                    <th>Khấu trừ</th>
+                    <th>Tổng</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sal in history %}
+                <tr>
+                    <td>{{ sal[2] }}</td>
+                    <td>{{ "{:,.0f}".format(sal[3]) }}</td>
+                    <td class="positive">+{{ "{:,.0f}".format(sal[4]) }}</td>
+                    <td class="negative">-{{ "{:,.0f}".format(sal[5]) }}</td>
+                    <td><strong>{{ "{:,.0f}".format(sal[6]) }}</strong></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">Chưa có dữ liệu</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
