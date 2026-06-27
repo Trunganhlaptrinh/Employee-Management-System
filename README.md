@@ -1,88 +1,124 @@
-SmartEMS - Employee Management System
-======================================
+# 🏢 SmartEMS — Employee Management System
 
-Hệ thống quản lý nhân viên với các chức năng: Điểm danh, Nghỉ phép, Lương thưởng, Quản lý hồ sơ.
+> Hệ thống quản lý nhân viên thông minh với các chức năng: **Điểm danh**, **Nghỉ phép**, **Lương thưởng**, **Quản lý hồ sơ**.
 
+---
 
-YÊU CẦU HỆ THỐNG
-----------------
+## 📋 Yêu cầu hệ thống
 
-- Python 3.8 trở lên (Tải tại: https://www.python.org/downloads/)
-- pip (đi kèm với Python)
+| Công cụ | Phiên bản | Ghi chú |
+|---------|-----------|---------|
+| Python  | 3.8 trở lên | [Tải tại python.org](https://www.python.org/downloads/) |
+| pip     | Đi kèm Python | Tự động cài khi cài Python |
 
+---
 
-CÀI ĐẶT
--------
+## ⚙️ Cài đặt
 
-1. Tải dự án
+### Bước 1 — Tải dự án
 
-   Cách 1 - Dùng Git:
-   git clone https://github.com/yourusername/employee-management.git
-   cd employee-management
+**Cách 1 — Dùng Git:**
+```bash
+git clone https://github.com/yourusername/employee-management.git
+cd employee-management
+```
 
-   Cách 2 - Tải file ZIP:
-   - Truy cập repository trên GitHub
-   - Nhấn nút Code -> Download ZIP
-   - Giải nén file ZIP
+**Cách 2 — Tải file ZIP:**
+- Truy cập repository trên GitHub
+- Nhấn **Code → Download ZIP**
+- Giải nén file ZIP vào thư mục mong muốn
 
-2. Cài đặt Python (nếu chưa có)
+---
 
-   Windows:
-   - Tải Python từ: https://www.python.org/downloads/
-   - Chạy file cài đặt
-   - QUAN TRỌNG: Đánh dấu chọn "Add Python to PATH"
-   - Nhấn "Install Now"
+### Bước 2 — Cài đặt Python *(nếu chưa có)*
 
-   macOS:
-   brew install python
+<details>
+<summary>🪟 Windows</summary>
 
-   Linux (Ubuntu/Debian):
-   sudo apt update
-   sudo apt install python3 python3-pip
+1. Tải Python từ [python.org/downloads](https://www.python.org/downloads/)
+2. Chạy file cài đặt
+3. ⚠️ **QUAN TRỌNG:** Đánh dấu chọn **"Add Python to PATH"**
+4. Nhấn **Install Now**
 
-3. Cài đặt thư viện
+</details>
 
-   Mở terminal trong thư mục dự án và chạy:
-   pip install -r requirements.txt
+<details>
+<summary>🍎 macOS</summary>
 
-   Nếu gặp lỗi, thử:
-   pip3 install -r requirements.txt
+```bash
+brew install python
+```
 
-4. Kiểm tra cài đặt
+</details>
 
-   python --version
-   pip --version
+<details>
+<summary>🐧 Linux (Ubuntu/Debian)</summary>
 
+```bash
+sudo apt update
+sudo apt install python3 python3-pip
+```
 
-CHẠY ỨNG DỤNG
--------------
+</details>
 
-1. Chạy local
-   python app.py
-   Hoặc:
-   python3 app.py
+---
 
-2. Truy cập
-   Mở trình duyệt: http://localhost:5000
+### Bước 3 — Cài đặt thư viện
 
-3. Dừng ứng dụng
-   Nhấn Ctrl + C trong terminal.
+```bash
+pip install -r requirements.txt
+```
 
+> 💡 Nếu gặp lỗi, thử: `pip3 install -r requirements.txt`
 
-TÀI KHOẢN MẶC ĐỊNH
-------------------
+---
 
-Vai trò   | Username | Password
-----------|----------|----------
-Admin     | admin    | admin123
+### Bước 4 — Kiểm tra cài đặt
 
-Lưu ý: Tài khoản admin được tự động tạo khi chạy lần đầu.
+```bash
+python --version
+pip --version
+```
 
+---
 
-HƯỚNG DẪN SỬ DỤNG
-------------------
+## 🚀 Chạy ứng dụng
 
-1. Đăng nhập
-   - Truy cập http://localhost:5000
-   - Nhập Username và Password
-   - Nhấn "Đăng nhập"
+**1. Khởi chạy server:**
+```bash
+python app.py
+# hoặc
+python3 app.py
+```
+
+**2. Truy cập ứng dụng:**
+
+Mở trình duyệt và vào địa chỉ: [http://localhost:5000](http://localhost:5000)
+
+**3. Dừng ứng dụng:**
+
+Nhấn `Ctrl + C` trong terminal.
+
+---
+
+## 🔑 Tài khoản mặc định
+
+| Vai trò | Username | Password  |
+|---------|----------|-----------|
+| Admin   | `admin`  | `admin123` |
+
+> ⚠️ Tài khoản Admin được tự động tạo khi khởi chạy lần đầu. **Vui lòng đổi mật khẩu sau khi đăng nhập.**
+
+---
+
+## 📖 Hướng dẫn sử dụng
+
+### Đăng nhập
+
+1. Truy cập [http://localhost:5000](http://localhost:5000)
+2. Nhập **Username** và **Password**
+3. Nhấn **"Đăng nhập"**
+
+---
+
+<p align="center"><sub>SmartEMS — Tài liệu hướng dẫn cài đặt & sử dụng</sub></p>
