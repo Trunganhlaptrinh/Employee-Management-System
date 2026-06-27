@@ -12,5 +12,33 @@
     "date": "2026-06-26",
     "status": "late",
     "note": ""
+  },
+  {
+    "id": 3,
+    "employee_id": 4,
+    "date": "2026-06-27",
+    "status": "late",
+    "note": ""
+  },
+  {
+    "id": 4,
+    "employee_id": 3,
+    "date": "2026-06-27",
+    "status": "present",
+    "note": ""
+  },
+  {
+    "id": 5,
+    "employee_id": 3,
+    "date": "2026-06-28",
+    "status": "late",
+    "note": ""
+  },
+  {
+    "id": 6,
+    "employee_id": 6,
+    "date": "2026-06-27",
+    "status": "absent",
+    "note": "Điểm danh lúc 18:03:03"
   }
 ]

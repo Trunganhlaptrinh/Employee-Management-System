@@ -234,7 +234,7 @@ tr:hover td      { background: var(--bg); }
 /* ===== TOAST ===== */
 #toast {
   position: fixed;
-  bottom: 28px;
+  top: 28px;
   right: 28px;
   background: var(--text);
   color: #fff;
@@ -242,7 +242,7 @@ tr:hover td      { background: var(--bg); }
   border-radius: var(--radius);
   font-size: .9rem;
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(-8px);
   transition: opacity .25s, transform .25s;
   z-index: 999;
   pointer-events: none;

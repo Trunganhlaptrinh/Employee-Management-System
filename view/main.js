@@ -20,7 +20,7 @@ const API = {
   async get(path) {
     try {
       const res = await fetch(BASE_URL + path, {
-        credentials: "include"  // gửi kèm cookie session
+        credentials: "include"
       });
       return await res.json();
     } catch (err) {
@@ -33,10 +33,10 @@ const API = {
   async post(path, body) {
     try {
       const res = await fetch(BASE_URL + path, {
-        method:      "POST",
-        headers:     { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body:        JSON.stringify(body)
+        body: JSON.stringify(body)
       });
       return await res.json();
     } catch (err) {
@@ -49,10 +49,10 @@ const API = {
   async put(path, body) {
     try {
       const res = await fetch(BASE_URL + path, {
-        method:      "PUT",
-        headers:     { "Content-Type": "application/json" },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body:        JSON.stringify(body)
+        body: JSON.stringify(body)
       });
       return await res.json();
     } catch (err) {
@@ -65,7 +65,7 @@ const API = {
   async delete(path) {
     try {
       const res = await fetch(BASE_URL + path, {
-        method:      "DELETE",
+        method: "DELETE",
         credentials: "include"
       });
       return await res.json();
@@ -87,7 +87,7 @@ function showToast(message, type = "default") {
   if (!toast) return;
 
   toast.textContent = message;
-  toast.className   = "show " + type;  // "show success" | "show error" | "show"
+  toast.className = "show " + type;
 
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
@@ -98,16 +98,16 @@ function showToast(message, type = "default") {
 // =============================
 // MODAL HELPER
 // =============================
-function openModal(id)  {
+function openModal(id) {
   document.getElementById(id).classList.add("open");
 }
+
 function closeModal(id) {
   document.getElementById(id).classList.remove("open");
 }
 
 // =============================
 // FORMAT TIỀN VIỆT NAM
-// ví dụ: 15000000 → "15,000,000 ₫"
 // =============================
 function formatMoney(amount) {
   return Number(amount).toLocaleString("vi-VN") + " ₫";
@@ -115,7 +115,6 @@ function formatMoney(amount) {
 
 // =============================
 // FORMAT NGÀY
-// "2025-06-15" → "15/06/2025"
 // =============================
 function formatDate(dateStr) {
   if (!dateStr) return "—";
@@ -128,75 +127,170 @@ function formatDate(dateStr) {
 // =============================
 function badgeStatus(status) {
   const map = {
-    present:  ["badge-green",  "Có mặt"],
-    absent:   ["badge-red",    "Vắng"],
-    late:     ["badge-yellow", "Đi muộn"],
-    approved: ["badge-green",  "Đã duyệt"],
-    rejected: ["badge-red",    "Từ chối"],
-    pending:  ["badge-yellow", "Chờ duyệt"],
+    present: ["badge-green", "Có mặt"],
+    absent: ["badge-red", "Vắng"],
+    late: ["badge-yellow", "Đi muộn"],
+    approved: ["badge-green", "Đã duyệt"],
+    rejected: ["badge-red", "Từ chối"],
+    pending: ["badge-yellow", "Chờ duyệt"],
   };
+
   const [cls, label] = map[status] || ["badge-gray", status];
   return `<span class="badge ${cls}">${label}</span>`;
 }
 
 // =============================
 // KIỂM TRA ĐĂNG NHẬP
-// gọi ở đầu mỗi trang (trừ index.html)
-// nếu chưa đăng nhập → quay về trang login
 // =============================
 async function requireLogin() {
   const res = await API.get("/auth/me");
+
   if (!res.success) {
     window.location.href = "index.html";
     return null;
   }
-  return res;  // trả về { employee_id, role, name }
+
+  return res;
+}
+
+// =============================
+// LẤY AVATAR CỦA NGƯỜI DÙNG
+// =============================
+let cachedAvatar = null;
+let avatarLoading = false;
+
+async function getUserAvatar() {
+  // Nếu đã có trong cache thì trả về luôn
+  if (cachedAvatar !== null) {
+    return cachedAvatar;
+  }
+
+  // Tránh gọi API nhiều lần cùng lúc
+  if (avatarLoading) {
+    // Chờ cho đến khi load xong
+    return new Promise((resolve) => {
+      const checkCache = setInterval(() => {
+        if (!avatarLoading) {
+          clearInterval(checkCache);
+          resolve(cachedAvatar);
+        }
+      }, 100);
+    });
+  }
+
+  avatarLoading = true;
+  try {
+    const res = await API.get("/auth/profile");
+    if (res.success && res.data && res.data.avatar) {
+      cachedAvatar = res.data.avatar;
+    } else {
+      cachedAvatar = null;
+    }
+  } catch (err) {
+    console.error("Lỗi lấy avatar:", err);
+    cachedAvatar = null;
+  } finally {
+    avatarLoading = false;
+  }
+
+  return cachedAvatar;
 }
 
 // =============================
 // RENDER SIDEBAR
-// gọi sau requireLogin() để hiển thị menu
 // =============================
 function renderSidebar(currentPage, user) {
   const isAdmin = user.role === "admin";
 
   const adminLinks = isAdmin ? `
     <a class="nav-item ${currentPage === 'employees' ? 'active' : ''}" href="employees.html">
-      <span class="icon">👥</span> Nhân viên
+      <img src="image/logo_quan_li_nhan_vien.png" style="height:18px;width:18px;object-fit:contain;" />
+      Quản lí nhân viên
     </a>
   ` : "";
 
+  // Render sidebar với Profile ở nhóm "Quản lý"
   document.getElementById("sidebar").innerHTML = `
-    <div class="sidebar-logo">👔 Emp<span>Manager</span></div>
+    <div class="sidebar-logo">
+      <img src="image/logo_E.png" style="height:22px;vertical-align:middle;margin-right:6px;" />
+      Smart<span>EMS</span>
+    </div>
+
+    
 
     <a class="nav-item ${currentPage === 'dashboard' ? 'active' : ''}" href="dashboard.html">
-      <span class="icon">🏠</span> Tổng quan
+      <img src="image/logo_ngoi_nha.png" style="height:18px;width:18px;object-fit:contain;" />
+      Home
     </a>
+
     <a class="nav-item ${currentPage === 'attendance' ? 'active' : ''}" href="attendance.html">
-      <span class="icon">📋</span> Điểm danh
+      <img src="image/logo_diem_danh.png" style="height:18px;width:18px;object-fit:contain;" />
+      Điểm danh
     </a>
+
     <a class="nav-item ${currentPage === 'leave' ? 'active' : ''}" href="leave.html">
-      <span class="icon">🌴</span> Nghỉ phép
+      <img src="image/logo_nghi_phep.png" style="height:18px;width:18px;object-fit:contain;" />
+      Nghỉ phép
     </a>
+
     <a class="nav-item ${currentPage === 'salary' ? 'active' : ''}" href="salary.html">
-      <span class="icon">💰</span> Lương thưởng
+      <img src="image/logo_luong.png" style="height:18px;width:18px;object-fit:contain;" />
+      Lương thưởng
     </a>
+
     ${adminLinks}
 
+    <!-- Phần Quản lý và Đăng xuất -->
     <div class="sidebar-bottom">
-      <div style="padding:0 20px 8px;font-size:.8rem;color:#9ca3af;">
-        Xin chào, <strong>${user.name}</strong>
-        <span style="display:block;font-size:.75rem;margin-top:1px;">${isAdmin ? '🔑 Admin' : '👤 Nhân viên'}</span>
-      </div>
+      <a class="nav-item ${currentPage === 'profile' ? 'active' : ''}" href="profile.html" style="margin-bottom:4px;">
+        <span class="profile-avatar-container"><span class="icon">👤</span></span>
+        Profile
+      </a>
       <button class="nav-item" onclick="doLogout()">
-        <span class="icon">🚪</span> Đăng xuất
+        <img src="image/logo_dang_xuat.png" style="height:18px;width:18px;object-fit:contain;" />
+        Đăng xuất
       </button>
     </div>
   `;
+
+  // Cập nhật avatar cho Profile
+  getUserAvatar().then(avatar => {
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar) return;
+
+    const profileContainer = sidebar.querySelector('.profile-avatar-container');
+    if (profileContainer) {
+      if (avatar) {
+        profileContainer.innerHTML = `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);" />`;
+      } else {
+        profileContainer.innerHTML = `<span class="icon">👤</span>`;
+      }
+    }
+  });
 }
 
-// xử lý đăng xuất
+// =============================
+// XỬ LÝ ĐĂNG XUẤT
+// =============================
 async function doLogout() {
   await API.post("/auth/logout", {});
+  // Reset cache avatar khi đăng xuất
+  cachedAvatar = null;
   window.location.href = "index.html";
+}
+
+// =============================
+// HÀM LÀM MỚI AVATAR TRÊN SIDEBAR (gọi sau khi upload avatar)
+// =============================
+function refreshSidebarAvatar() {
+  // Reset cache để load lại avatar mới
+  cachedAvatar = null;
+  // Gọi lại renderSidebar với page hiện tại
+  const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'dashboard';
+  // Lấy thông tin user từ session
+  API.get("/auth/me").then(res => {
+    if (res.success) {
+      renderSidebar(currentPage, res);
+    }
+  });
 }

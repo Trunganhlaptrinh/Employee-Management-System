@@ -102,3 +102,13 @@ def update_salary(salary_id):
             return jsonify({"success": True, "message": "Cập nhật thành công", "total": all_salaries[i]["total"]})
 
     return jsonify({"success": False, "message": "Không tìm thấy bảng lương"}), 404
+
+@salary_bp.route("/<int:salary_id>", methods=["DELETE"])
+def delete_salary(salary_id):
+    if session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Không có quyền"}), 403
+
+    ok = FileHelper.delete_item("salaries", salary_id)
+    if not ok:
+        return jsonify({"success": False, "message": "Không tìm thấy bảng lương"}), 404
+    return jsonify({"success": True, "message": "Đã xóa bảng lương"})
