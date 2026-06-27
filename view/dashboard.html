@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<!-- view/dashboard.html — trang tổng quan sau khi đăng nhập -->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tổng quan — EmpManager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<div class="page-wrap">
+  <!-- sidebar sẽ được render bằng JS -->
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1 id="greeting">Xin chào! 👋</h1>
+      <p>Hôm nay: <span id="today-date"></span></p>
+    </div>
+
+    <!-- stat cards -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="label">Tổng nhân viên</div>
+        <div class="value" id="stat-employees">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Điểm danh hôm nay</div>
+        <div class="value" id="stat-present">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Đơn nghỉ chờ duyệt</div>
+        <div class="value" id="stat-pending">—</div>
+      </div>
+    </div>
+
+    <!-- bảng điểm danh gần nhất -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Điểm danh gần đây</h2>
+        <a href="attendance.html" class="btn btn-ghost btn-sm">Xem tất cả</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ngày</th>
+              <th>Nhân viên</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody id="att-body">
+            <tr><td colspan="4" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- đơn nghỉ phép gần nhất -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Đơn nghỉ phép gần đây</h2>
+        <a href="leave.html" class="btn btn-ghost btn-sm">Xem tất cả</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Từ ngày</th>
+              <th>Đến ngày</th>
+              <th>Lý do</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="leave-body">
+            <tr><td colspan="4" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="main.js"></script>
+<script>
+  let currentUser = null;
+
+  // ngày hôm nay định dạng YYYY-MM-DD
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("today-date").textContent = formatDate(today);
+
+  // khởi động trang
+  async function init() {
+    currentUser = await requireLogin();
+    if (!currentUser) return;
+
+    renderSidebar("dashboard", currentUser);
+    document.getElementById("greeting").textContent =
+      `Xin chào, ${currentUser.name}! 👋`;
+
+    await loadStats();
+    await loadRecentAttendance();
+    await loadRecentLeaves();
+  }
+
+  async function loadStats() {
+    // stat: tổng nhân viên (chỉ admin mới thấy)
+    if (currentUser.role === "admin") {
+      const empRes = await API.get("/auth/employees");
+      if (empRes.success) {
+        document.getElementById("stat-employees").textContent = empRes.data.length;
+      }
+
+      // đơn nghỉ chờ duyệt
+      const leaveRes = await API.get("/leave?status=pending");
+      if (leaveRes.success) {
+        document.getElementById("stat-pending").textContent = leaveRes.data.length;
+      }
+    } else {
+      // nhân viên thường: ẩn stat employees
+      document.getElementById("stat-employees").textContent = "—";
+      const leaveRes = await API.get("/leave?status=pending");
+      if (leaveRes.success) {
+        document.getElementById("stat-pending").textContent = leaveRes.data.length;
+      }
+    }
+
+    // điểm danh hôm nay của bản thân (hoặc toàn công ty nếu admin)
+    const attRes = await API.get(`/attendance?month=${today.slice(0,7)}`);
+    if (attRes.success) {
+      const todayAtt = attRes.data.filter(a => a.date === today);
+      document.getElementById("stat-present").textContent =
+        todayAtt.filter(a => a.status === "present").length +
+        " / " + todayAtt.length;
+    }
+  }
+
+  async function loadRecentAttendance() {
+    const res = await API.get(`/attendance?month=${today.slice(0,7)}`);
+    const tbody = document.getElementById("att-body");
+
+    if (!res.success || res.data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty">Chưa có dữ liệu điểm danh</td></tr>`;
+      return;
+    }
+
+    // lấy 5 bản ghi gần nhất (sort theo date giảm dần)
+    const recent = res.data.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+    tbody.innerHTML = recent.map(a => `
+      <tr>
+        <td>${formatDate(a.date)}</td>
+        <td>ID ${a.employee_id}</td>
+        <td>${badgeStatus(a.status)}</td>
+        <td style="color:#6b7280">${a.note || "—"}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function loadRecentLeaves() {
+    const res = await API.get("/leave");
+    const tbody = document.getElementById("leave-body");
+
+    if (!res.success || res.data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty">Chưa có đơn nghỉ phép nào</td></tr>`;
+      return;
+    }
+
+    const recent = res.data.slice(-5).reverse();
+    tbody.innerHTML = recent.map(lv => `
+      <tr>
+        <td>${formatDate(lv.from_date)}</td>
+        <td>${formatDate(lv.to_date)}</td>
+        <td style="color:#6b7280">${lv.reason}</td>
+        <td>${badgeStatus(lv.status)}</td>
+      </tr>
+    `).join("");
+  }
+
+  init();
+</script>
+</body>
+</html>

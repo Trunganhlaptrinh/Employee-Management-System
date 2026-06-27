@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "employee_id": 1,
+    "date": "2026-06-26",
+    "status": "absent",
+    "note": ""
+  },
+  {
+    "id": 2,
+    "employee_id": 2,
+    "date": "2026-06-26",
+    "status": "late",
+    "note": ""
+  }
+]

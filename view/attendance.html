@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<!-- view/attendance.html — trang điểm danh -->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Điểm danh — EmpManager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<div class="page-wrap">
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Điểm danh 📋</h1>
+      <p>Xem và quản lý bảng chấm công</p>
+    </div>
+
+    <!-- FORM ĐIỂM DANH -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Điểm danh hôm nay</h2>
+      </div>
+      <div class="form-row">
+        <!-- admin chọn nhân viên, nhân viên thường không thấy ô này -->
+        <div class="form-group" id="emp-select-wrap" style="display:none;">
+          <label>Nhân viên</label>
+          <select id="att-emp-id">
+            <option value="">Chọn nhân viên...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ngày</label>
+          <input type="date" id="att-date" />
+        </div>
+
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <select id="att-status">
+            <option value="present">✅ Có mặt</option>
+            <option value="absent">❌ Vắng</option>
+            <option value="late">⏰ Đi muộn</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ghi chú (tùy chọn)</label>
+        <input type="text" id="att-note" placeholder="Ví dụ: Họp sáng, về sớm..." />
+      </div>
+
+      <button class="btn btn-primary" onclick="submitAttendance()">
+        ✅ Ghi nhận điểm danh
+      </button>
+    </div>
+
+    <!-- BẢNG XEM ĐIỂM DANH -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Lịch sử điểm danh</h2>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="month" id="filter-month" style="padding:6px 10px;border:1.5px solid #e4e7ec;border-radius:8px;font-family:inherit;" />
+          <button class="btn btn-ghost btn-sm" onclick="loadAttendance()">Lọc</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Ngày</th>
+              <th id="col-emp" style="display:none;">Nhân viên ID</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú</th>
+              <th id="col-action" style="display:none;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="att-body">
+            <tr><td colspan="6" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL SỬA ĐIỂM DANH (chỉ admin) -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Sửa điểm danh</h2>
+      <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-att-id" />
+    <div class="form-group">
+      <label>Trạng thái</label>
+      <select id="edit-status">
+        <option value="present">✅ Có mặt</option>
+        <option value="absent">❌ Vắng</option>
+        <option value="late">⏰ Đi muộn</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Ghi chú</label>
+      <input type="text" id="edit-note" />
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Hủy</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="main.js"></script>
+<script>
+  let currentUser = null;
+  const today = new Date().toISOString().split("T")[0];
+
+  async function init() {
+    currentUser = await requireLogin();
+    if (!currentUser) return;
+
+    renderSidebar("attendance", currentUser);
+
+    // đặt ngày mặc định = hôm nay
+    document.getElementById("att-date").value = today;
+
+    // đặt tháng lọc mặc định = tháng này
+    document.getElementById("filter-month").value = today.slice(0, 7);
+
+    if (currentUser.role === "admin") {
+      // hiện ô chọn nhân viên và cột nhân viên
+      document.getElementById("emp-select-wrap").style.display = "block";
+      document.getElementById("col-emp").style.display = "";
+      document.getElementById("col-action").style.display = "";
+      await loadEmployeeOptions();
+    }
+
+    await loadAttendance();
+  }
+
+  // load danh sách nhân viên vào dropdown (chỉ admin)
+  async function loadEmployeeOptions() {
+    const res = await API.get("/auth/employees");
+    if (!res.success) return;
+    const sel = document.getElementById("att-emp-id");
+    sel.innerHTML = res.data.map(e =>
+      `<option value="${e.id}">${e.name} (${e.department})</option>`
+    ).join("");
+  }
+
+  // ghi nhận điểm danh
+  async function submitAttendance() {
+    const date   = document.getElementById("att-date").value;
+    const status = document.getElementById("att-status").value;
+    const note   = document.getElementById("att-note").value.trim();
+
+    const body = { date, status, note };
+
+    // admin có thể điểm cho người khác
+    if (currentUser.role === "admin") {
+      body.employee_id = parseInt(document.getElementById("att-emp-id").value);
+    }
+
+    const res = await API.post("/attendance", body);
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      document.getElementById("att-note").value = "";
+      await loadAttendance();
+    }
+  }
+
+  // tải bảng điểm danh
+  async function loadAttendance() {
+    const month = document.getElementById("filter-month").value;
+    const res = await API.get(`/attendance?month=${month}`);
+    const tbody = document.getElementById("att-body");
+    const isAdmin = currentUser.role === "admin";
+    const cols = isAdmin ? 6 : 4;
+
+    if (!res.success || res.data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">Không có dữ liệu điểm danh</td></tr>`;
+      return;
+    }
+
+    const sorted = res.data.sort((a, b) => b.date.localeCompare(a.date));
+    tbody.innerHTML = sorted.map(a => `
+      <tr>
+        <td style="color:#9ca3af">#${a.id}</td>
+        <td>${formatDate(a.date)}</td>
+        ${isAdmin ? `<td>ID ${a.employee_id}</td>` : ""}
+        <td>${badgeStatus(a.status)}</td>
+        <td style="color:#6b7280">${a.note || "—"}</td>
+        ${isAdmin ? `<td><button class="btn btn-ghost btn-sm" onclick="openEdit(${a.id},'${a.status}','${a.note}')">Sửa</button></td>` : ""}
+      </tr>
+    `).join("");
+  }
+
+  // mở modal sửa
+  function openEdit(id, status, note) {
+    document.getElementById("edit-att-id").value = id;
+    document.getElementById("edit-status").value = status;
+    document.getElementById("edit-note").value   = note;
+    openModal("edit-modal");
+  }
+
+  // lưu chỉnh sửa
+  async function saveEdit() {
+    const id     = document.getElementById("edit-att-id").value;
+    const status = document.getElementById("edit-status").value;
+    const note   = document.getElementById("edit-note").value.trim();
+
+    const res = await API.put(`/attendance/${id}`, { status, note });
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      closeModal("edit-modal");
+      await loadAttendance();
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

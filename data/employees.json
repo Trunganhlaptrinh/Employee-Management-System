@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "name": "Administrator",
+    "role": "admin",
+    "department": "Management",
+    "base_salary": 0
+  },
+  {
+    "id": 3,
+    "username": "trunganh",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "name": "Trung Anh",
+    "role": "employee",
+    "department": "123456",
+    "base_salary": 0.0
+  }
+]

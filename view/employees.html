@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<!-- view/employees.html — trang quản lý nhân viên (chỉ admin) -->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nhân viên — EmpManager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<div class="page-wrap">
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Quản lý nhân viên 👥</h1>
+      <p>Thêm, xem và xóa tài khoản nhân viên</p>
+    </div>
+
+    <!-- FORM THÊM NHÂN VIÊN -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Thêm nhân viên mới</h2>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Họ tên</label>
+          <input type="text" id="emp-name" placeholder="Nguyễn Văn A" />
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="emp-username" placeholder="nguyenvana" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="emp-password" placeholder="Tối thiểu 6 ký tự" />
+        </div>
+        <div class="form-group">
+          <label>Phòng ban</label>
+          <input type="text" id="emp-dept" placeholder="Kỹ thuật, Marketing..." />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vai trò</label>
+          <select id="emp-role">
+            <option value="employee">👤 Nhân viên</option>
+            <option value="admin">🔑 Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lương cơ bản (₫)</label>
+          <input type="number" id="emp-salary" placeholder="10000000" min="0" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addEmployee()">
+        ➕ Thêm nhân viên
+      </button>
+    </div>
+
+    <!-- DANH SÁCH NHÂN VIÊN -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Danh sách nhân viên</h2>
+        <span id="emp-count" style="color:#6b7280;font-size:.88rem;"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Họ tên</th>
+              <th>Username</th>
+              <th>Phòng ban</th>
+              <th>Vai trò</th>
+              <th>Lương CB</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="emp-body">
+            <tr><td colspan="7" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="main.js"></script>
+<script>
+  let currentUser = null;
+
+  async function init() {
+    currentUser = await requireLogin();
+    if (!currentUser) return;
+
+    // chỉ admin mới được vào trang này
+    if (currentUser.role !== "admin") {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    renderSidebar("employees", currentUser);
+    await loadEmployees();
+  }
+
+  async function addEmployee() {
+    const name        = document.getElementById("emp-name").value.trim();
+    const username    = document.getElementById("emp-username").value.trim();
+    const password    = document.getElementById("emp-password").value;
+    const department  = document.getElementById("emp-dept").value.trim();
+    const role        = document.getElementById("emp-role").value;
+    const base_salary = parseFloat(document.getElementById("emp-salary").value) || 0;
+
+    const res = await API.post("/auth/employees", {
+      name, username, password, department, role, base_salary
+    });
+
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      // xóa form
+      ["emp-name","emp-username","emp-password","emp-dept","emp-salary"]
+        .forEach(id => document.getElementById(id).value = "");
+      await loadEmployees();
+    }
+  }
+
+  async function loadEmployees() {
+    const res = await API.get("/auth/employees");
+    const tbody = document.getElementById("emp-body");
+
+    if (!res.success) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Không tải được danh sách</td></tr>`;
+      return;
+    }
+
+    document.getElementById("emp-count").textContent = `${res.data.length} nhân viên`;
+
+    if (res.data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Chưa có nhân viên nào</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = res.data.map(e => `
+      <tr>
+        <td style="color:#9ca3af">#${e.id}</td>
+        <td style="font-weight:500;">${e.name}</td>
+        <td style="color:#6b7280">${e.username}</td>
+        <td>${e.department}</td>
+        <td>${e.role === "admin"
+              ? '<span class="badge badge-blue">🔑 Admin</span>'
+              : '<span class="badge badge-gray">👤 Nhân viên</span>'}</td>
+        <td>${formatMoney(e.base_salary)}</td>
+        <td>
+          ${e.id !== currentUser.employee_id
+            ? `<button class="btn btn-danger btn-sm" onclick="removeEmployee(${e.id},'${e.name}')">Xóa</button>`
+            : '<span style="color:#9ca3af;font-size:.82rem;">Bạn</span>'}
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function removeEmployee(id, name) {
+    if (!confirm(`Xóa nhân viên "${name}"? Hành động này không thể hoàn tác.`)) return;
+    const res = await API.delete(`/auth/employees/${id}`);
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) await loadEmployees();
+  }
+
+  init();
+</script>
+</body>
+</html>

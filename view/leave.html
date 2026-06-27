@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<!-- view/leave.html — trang nghỉ phép -->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nghỉ phép — EmpManager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<div class="page-wrap">
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Nghỉ phép 🌴</h1>
+      <p>Gửi và quản lý đơn xin nghỉ phép</p>
+    </div>
+
+    <!-- FORM GỬI ĐƠN -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Gửi đơn xin nghỉ</h2>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Từ ngày</label>
+          <input type="date" id="from-date" />
+        </div>
+        <div class="form-group">
+          <label>Đến ngày</label>
+          <input type="date" id="to-date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Lý do</label>
+        <textarea id="reason" rows="3" placeholder="Nhập lý do xin nghỉ..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitLeave()">
+        📤 Gửi đơn
+      </button>
+    </div>
+
+    <!-- DANH SÁCH ĐƠN -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Danh sách đơn nghỉ phép</h2>
+        <div style="display:flex;gap:8px;">
+          <select id="filter-status" style="padding:6px 10px;border:1.5px solid #e4e7ec;border-radius:8px;font-family:inherit;font-size:.88rem;">
+            <option value="">Tất cả</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadLeaves()">Lọc</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th id="col-emp" style="display:none;">Nhân viên ID</th>
+              <th>Từ ngày</th>
+              <th>Đến ngày</th>
+              <th>Lý do</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="leave-body">
+            <tr><td colspan="7" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="main.js"></script>
+<script>
+  let currentUser = null;
+
+  async function init() {
+    currentUser = await requireLogin();
+    if (!currentUser) return;
+
+    renderSidebar("leave", currentUser);
+
+    // đặt ngày mặc định
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("from-date").value = today;
+    document.getElementById("to-date").value   = today;
+
+    if (currentUser.role === "admin") {
+      document.getElementById("col-emp").style.display = "";
+    }
+
+    await loadLeaves();
+  }
+
+  // gửi đơn nghỉ
+  async function submitLeave() {
+    const from_date = document.getElementById("from-date").value;
+    const to_date   = document.getElementById("to-date").value;
+    const reason    = document.getElementById("reason").value.trim();
+
+    const res = await API.post("/leave", { from_date, to_date, reason });
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      document.getElementById("reason").value = "";
+      await loadLeaves();
+    }
+  }
+
+  // tải danh sách đơn
+  async function loadLeaves() {
+    const status = document.getElementById("filter-status").value;
+    const url    = "/leave" + (status ? `?status=${status}` : "");
+    const res    = await API.get(url);
+    const tbody  = document.getElementById("leave-body");
+    const isAdmin = currentUser.role === "admin";
+
+    if (!res.success || res.data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Không có đơn nghỉ phép nào</td></tr>`;
+      return;
+    }
+
+    const sorted = res.data.slice().reverse();
+    tbody.innerHTML = sorted.map(lv => {
+      // nút thao tác tùy role
+      let actions = "";
+      if (isAdmin) {
+        actions = `
+          <button class="btn btn-success btn-sm" onclick="updateLeave(${lv.id},'approved')">Duyệt</button>
+          <button class="btn btn-danger btn-sm"  onclick="updateLeave(${lv.id},'rejected')">Từ chối</button>
+        `;
+      } else if (lv.status === "pending") {
+        actions = `<button class="btn btn-danger btn-sm" onclick="deleteLeave(${lv.id})">Hủy</button>`;
+      }
+
+      return `
+        <tr>
+          <td style="color:#9ca3af">#${lv.id}</td>
+          ${isAdmin ? `<td>ID ${lv.employee_id}</td>` : ""}
+          <td>${formatDate(lv.from_date)}</td>
+          <td>${formatDate(lv.to_date)}</td>
+          <td style="color:#6b7280;max-width:200px;">${lv.reason}</td>
+          <td>${badgeStatus(lv.status)}</td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">${actions || "—"}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // admin duyệt / từ chối
+  async function updateLeave(id, status) {
+    const res = await API.put(`/leave/${id}`, { status });
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) await loadLeaves();
+  }
+
+  // nhân viên hủy đơn
+  async function deleteLeave(id) {
+    const res = await API.delete(`/leave/${id}`);
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) await loadLeaves();
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -1,83 +1,95 @@
 # util/validation.py
+# util: kiểm tra dữ liệu đầu vào từ request
+# tương tự Validation.java trong bài cũ — nhưng ở đây input là JSON từ frontend
+
 import re
 from datetime import datetime
 
 class Validation:
-    @staticmethod
-    def is_empty(value):
-        return not value or str(value).strip() == ''
-    
-    @staticmethod
-    def validate_username(username):
-        if Validation.is_empty(username):
-            return False, "Username cannot be empty"
-        if len(username) < 3:
-            return False, "Username must be at least 3 characters"
-        return True, ""
-    
-    @staticmethod
-    def validate_password(password):
-        if Validation.is_empty(password):
-            return False, "Password cannot be empty"
-        if len(password) < 6:
-            return False, "Password must be at least 6 characters"
-        return True, ""
-    
-    @staticmethod
-    def validate_name(name):
-        if Validation.is_empty(name):
-            return False, "Name cannot be empty"
-        if not re.match(r'^[A-Za-z\s]+$', name):
-            return False, "Name must contain only letters and spaces"
-        return True, ""
-    
-    @staticmethod
-    def validate_date(date_str):
-        try:
-            datetime.strptime(date_str, '%Y-%m-%d')
-            return True, ""
-        except ValueError:
-            return False, "Invalid date format (YYYY-MM-DD)"
-    
-    @staticmethod
-    def validate_month(month_str):
-        try:
-            datetime.strptime(month_str, '%Y-%m')
-            return True, ""
-        except ValueError:
-            return False, "Invalid month format (YYYY-MM)"
-    
-    @staticmethod
-    def validate_position(position):
-        valid_positions = ['Manager', 'Team Lead', 'Developer', 'Tester', 'Designer', 'HR']
-        if position not in valid_positions:
-            return False, f"Position must be one of: {', '.join(valid_positions)}"
-        return True, ""
-    # util/validation.py - Thêm các method sau
 
+    # kiểm tra chuỗi không rỗng và không chỉ gồm khoảng trắng
+    # tương tự checkInputString() trong Java
     @staticmethod
-    def validate_register(username, password, confirm_password, name):
-        """Kiểm tra thông tin đăng ký"""
-        # Kiểm tra username
-        if Validation.is_empty(username):
-            return False, "Username không được để trống"
-        if len(username) < 3:
-            return False, "Username phải có ít nhất 3 ký tự"
-        if not username.isalnum():
-            return False, "Username chỉ được chứa chữ và số"
-        
-        # Kiểm tra password
-        if Validation.is_empty(password):
-            return False, "Password không được để trống"
-        if len(password) < 6:
-            return False, "Password phải có ít nhất 6 ký tự"
-        
-        # Kiểm tra confirm password
-        if password != confirm_password:
-            return False, "Mật khẩu xác nhận không khớp"
-        
-        # Kiểm tra tên
-        if Validation.is_empty(name):
-            return False, "Họ tên không được để trống"
-        
-        return True, "OK"
+    def check_not_empty(value: str, field_name: str) -> str:
+        if not value or not value.strip():
+            raise ValueError(f"{field_name} không được để trống")
+        return value.strip()
+
+    # kiểm tra tên (chỉ chữ cái và khoảng trắng, giống Java)
+    @staticmethod
+    def check_name(value: str) -> str:
+        value = Validation.check_not_empty(value, "Tên")
+        if not re.match(r'^[A-Za-zÀ-ỹ\s]+$', value):
+            raise ValueError("Tên chỉ được chứa chữ cái và khoảng trắng")
+        return value
+
+    # kiểm tra username (chữ thường, số, không dấu, không khoảng trắng)
+    @staticmethod
+    def check_username(value: str) -> str:
+        value = Validation.check_not_empty(value, "Username")
+        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', value):
+            raise ValueError("Username chỉ được chứa chữ, số, dấu _ và dài 3-30 ký tự")
+        return value
+
+    # kiểm tra password tối thiểu 6 ký tự
+    @staticmethod
+    def check_password(value: str) -> str:
+        if not value or len(value) < 6:
+            raise ValueError("Mật khẩu phải có ít nhất 6 ký tự")
+        return value
+
+    # kiểm tra role chỉ được là "admin" hoặc "employee"
+    # tương tự checkCourseName() kiểm tra danh sách cho phép trong Java
+    @staticmethod
+    def check_role(value: str) -> str:
+        value = Validation.check_not_empty(value, "Role")
+        if value not in ["admin", "employee"]:
+            raise ValueError("Role phải là 'admin' hoặc 'employee'")
+        return value
+
+    # kiểm tra định dạng ngày "YYYY-MM-DD"
+    @staticmethod
+    def check_date(value: str, field_name: str = "Ngày") -> str:
+        value = Validation.check_not_empty(value, field_name)
+        try:
+            datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"{field_name} phải đúng định dạng YYYY-MM-DD")
+        return value
+
+    # kiểm tra định dạng tháng "YYYY-MM"
+    @staticmethod
+    def check_month(value: str) -> str:
+        value = Validation.check_not_empty(value, "Tháng")
+        try:
+            datetime.strptime(value, "%Y-%m")
+        except ValueError:
+            raise ValueError("Tháng phải đúng định dạng YYYY-MM")
+        return value
+
+    # kiểm tra trạng thái điểm danh
+    @staticmethod
+    def check_attendance_status(value: str) -> str:
+        value = Validation.check_not_empty(value, "Trạng thái")
+        if value not in ["present", "absent", "late"]:
+            raise ValueError("Trạng thái phải là: present / absent / late")
+        return value
+
+    # kiểm tra số tiền (không âm)
+    @staticmethod
+    def check_money(value, field_name: str = "Số tiền") -> float:
+        try:
+            amount = float(value)
+        except (TypeError, ValueError):
+            raise ValueError(f"{field_name} phải là số")
+        if amount < 0:
+            raise ValueError(f"{field_name} không được âm")
+        return amount
+
+    # kiểm tra from_date phải <= to_date
+    @staticmethod
+    def check_date_range(from_date: str, to_date: str):
+        d1 = datetime.strptime(from_date, "%Y-%m-%d")
+        d2 = datetime.strptime(to_date,   "%Y-%m-%d")
+        if d1 > d2:
+            raise ValueError("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc")
