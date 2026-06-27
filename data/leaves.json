@@ -1,26 +1,10 @@
 [
   {
-    "id": 1,
-    "employee_id": 3,
+    "id": 2,
+    "employee_id": 8,
     "from_date": "2026-06-27",
     "to_date": "2026-06-28",
-    "reason": "ngủ",
-    "status": "rejected"
-  },
-  {
-    "id": 8,
-    "employee_id": 3,
-    "from_date": "2026-06-29",
-    "to_date": "2026-06-30",
-    "reason": "đi nét với bạn",
-    "status": "pending"
-  },
-  {
-    "id": 10,
-    "employee_id": 6,
-    "from_date": "2026-06-27",
-    "to_date": "2026-06-28",
-    "reason": "ff",
+    "reason": "dđ",
     "status": "pending"
   }
 ]

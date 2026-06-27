@@ -9,7 +9,6 @@
   <link rel="icon" type="image/png" href="image/logo_E.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* ===== CALENDAR ===== */
     .cal-header {
       display: flex;
       align-items: center;
@@ -103,7 +102,6 @@
       border-radius: 6px;
     }
 
-    /* info bar dưới calendar */
     .cal-info {
       margin-top: 12px;
       padding: 10px 14px;
@@ -132,7 +130,6 @@
       font-size: .82rem;
     }
 
-    /* ===== MODAL LAYOUT ===== */
     .modal-leave {
       max-width: 700px;
       padding: 24px 28px;
@@ -212,7 +209,6 @@
       <p>Gửi và quản lý đơn xin nghỉ phép</p>
     </div>
 
-    <!-- NÚT MỞ CALENDAR -->
     <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;">
       <div>
         <h2 style="margin-bottom:4px;font-size:1.1rem;">Xin nghỉ phép</h2>
@@ -223,7 +219,6 @@
       </button>
     </div>
 
-    <!-- DANH SÁCH ĐƠN -->
     <div class="card">
       <div class="card-header">
         <h2>Danh sách đơn nghỉ phép</h2>
@@ -246,7 +241,7 @@
               <th>Số ngày</th>
               <th>Lý do</th>
               <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th id="admin-actions-col" style="display:none;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="leave-body">
@@ -258,7 +253,7 @@
   </main>
 </div>
 
-<!-- ===== MODAL XIN NGHỈ ===== -->
+<!-- MODAL XIN NGHỈ -->
 <div class="modal-overlay" id="cal-modal">
   <div class="modal modal-leave">
     <div class="modal-header">
@@ -267,7 +262,6 @@
     </div>
 
     <div class="modal-body">
-      <!-- LEFT: CALENDAR -->
       <div class="modal-left">
         <div class="cal-header">
           <button class="cal-nav" onclick="prevMonth()">‹</button>
@@ -275,12 +269,9 @@
           <button class="cal-nav" onclick="nextMonth()">›</button>
         </div>
         <div class="cal-grid" id="cal-grid"></div>
-
-        <!-- Thông tin ngày nghỉ - nằm dưới calendar -->
         <div class="cal-info" id="cal-info">Chọn ngày bắt đầu nghỉ</div>
       </div>
 
-      <!-- RIGHT: LÝ DO + NÚT -->
       <div class="modal-right">
         <div class="form-group">
           <label style="font-weight:600;font-size:.88rem;">Lý do xin nghỉ</label>
@@ -303,7 +294,8 @@
 <script src="main.js"></script>
 <script>
   let currentUser = null;
-  let allLeaves = []; // Lưu toàn bộ đơn để kiểm tra trùng ngày
+  let allLeaves = [];
+  let isAdmin = false;
 
   let calYear, calMonth;
   let rangeStart = null;
@@ -312,7 +304,14 @@
   async function init() {
     currentUser = await requireLogin();
     if (!currentUser) return;
+    
+    isAdmin = currentUser.role === "admin";
     renderSidebar("leave", currentUser);
+
+    // Nếu là Admin, hiển thị cột thao tác
+    if (isAdmin) {
+      document.getElementById("admin-actions-col").style.display = "";
+    }
 
     const now = new Date();
     calYear  = now.getFullYear();
@@ -321,7 +320,6 @@
     await loadLeaves();
   }
 
-  // ===== CALENDAR =====
   function renderCalendar() {
     const months = ["Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
                     "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"];
@@ -337,7 +335,6 @@
     const offset = (firstDay === 0) ? 6 : firstDay - 1;
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
-    // Lấy danh sách ngày đã có đơn nghỉ
     const leaveDates = new Set();
     allLeaves.forEach(lv => {
       const from = new Date(lv.from_date);
@@ -454,19 +451,16 @@
     closeModal("cal-modal");
   }
 
-  // ===== KIỂM TRA TRÙNG NGÀY =====
   function isOverlapping(fromDate, toDate) {
     const from = new Date(fromDate);
     const to = new Date(toDate);
     
     for (const lv of allLeaves) {
-      // Chỉ kiểm tra đơn đang chờ duyệt hoặc đã duyệt
       if (lv.status === 'rejected') continue;
       
       const lvFrom = new Date(lv.from_date);
       const lvTo = new Date(lv.to_date);
       
-      // Kiểm tra khoảng thời gian có overlap không
       if (from <= lvTo && to >= lvFrom) {
         return true;
       }
@@ -474,7 +468,6 @@
     return false;
   }
 
-  // ===== GỬI ĐƠN =====
   async function confirmLeave() {
     if (!rangeStart || !rangeEnd) return;
 
@@ -484,7 +477,6 @@
       return;
     }
 
-    // Kiểm tra trùng ngày
     if (isOverlapping(rangeStart, rangeEnd)) {
       showToast("❌ Khoảng thời gian này đã có đơn nghỉ (đang chờ duyệt hoặc đã duyệt)!", "error");
       return;
@@ -509,7 +501,6 @@
     }
   }
 
-  // ===== LOAD DANH SÁCH =====
   async function loadLeaves() {
     const status  = document.getElementById("filter-status").value;
     const url     = "/leave" + (status ? `?status=${status}` : "");
@@ -521,7 +512,6 @@
       return;
     }
 
-    // Lưu toàn bộ đơn của user để kiểm tra trùng ngày
     allLeaves = res.data;
 
     if (res.data.length === 0) {
@@ -529,7 +519,6 @@
       return;
     }
 
-    // Sắp xếp mới nhất lên đầu
     const sorted = res.data.slice().reverse();
     tbody.innerHTML = sorted.map(lv => {
       const d1   = new Date(lv.from_date);
@@ -537,10 +526,23 @@
       const days = Math.round((d2-d1)/86400000)+1;
 
       let actions = "";
-      if (lv.status === "pending") {
-        actions = `<button class="btn btn-danger btn-sm" onclick="deleteLeave(${lv.id})">Hủy</button>`;
+      // CHỈ ADMIN MỚI CÓ QUYỀN DUYỆT/TỪ CHỐI
+      if (isAdmin) {
+        if (lv.status === "pending") {
+          actions = `
+            <button class="btn btn-success btn-sm" onclick="updateLeave(${lv.id},'approved')">Duyệt</button>
+            <button class="btn btn-danger btn-sm"  onclick="updateLeave(${lv.id},'rejected')">Từ chối</button>
+          `;
+        } else {
+          actions = `<button class="btn btn-danger btn-sm" onclick="deleteLeave(${lv.id})">Xóa</button>`;
+        }
       } else {
-        actions = "—";
+        // User: chỉ hủy được đơn đang chờ duyệt
+        if (lv.status === "pending") {
+          actions = `<button class="btn btn-danger btn-sm" onclick="deleteLeave(${lv.id})">Hủy</button>`;
+        } else {
+          actions = "—";
+        }
       }
 
       return `
@@ -556,8 +558,18 @@
     }).join("");
   }
 
+  async function updateLeave(id, status) {
+    if (!isAdmin) {
+      showToast("Bạn không có quyền thực hiện!", "error");
+      return;
+    }
+    const res = await API.put(`/leave/${id}`, { status });
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) await loadLeaves();
+  }
+
   async function deleteLeave(id) {
-    if (!confirm('Bạn có chắc muốn hủy đơn nghỉ này?')) return;
+    if (!confirm('Bạn có chắc muốn hủy/xóa đơn nghỉ này?')) return;
     
     const res = await API.delete(`/leave/${id}`);
     showToast(res.message, res.success ? "success" : "error");

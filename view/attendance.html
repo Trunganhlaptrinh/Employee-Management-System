@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/png" href="image/logo_E.png" />
   <style>
-    /* ===== ATTENDANCE CLOCK ===== */
     .attendance-clock {
       display: flex;
       align-items: center;
@@ -38,36 +37,85 @@
       margin-top: 1px;
     }
 
-    .btn-checkin {
-      padding: 10px 28px;
-      font-size: 0.95rem;
+    .admin-section {
+      display: none;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: var(--bg);
       border-radius: 10px;
-      background: #4255ff;
-      color: #fff;
-      border: none;
+      border: 1px solid var(--border);
+    }
+    .admin-section .admin-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .admin-section .admin-row .form-group {
+      flex: 1;
+      min-width: 160px;
+      margin-bottom: 0;
+    }
+    .admin-section .admin-row .form-group label {
+      font-weight: 500;
+      font-size: .82rem;
+      color: var(--text);
+      display: block;
+      margin-bottom: 3px;
+    }
+    .admin-section .admin-row .form-group select,
+    .admin-section .admin-row .form-group input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: .85rem;
+      outline: none;
+      background: var(--white);
+    }
+    .admin-section .admin-row .form-group select:focus,
+    .admin-section .admin-row .form-group input:focus {
+      border-color: #4255ff;
+    }
+    .admin-section .admin-row .btn {
+      padding: 8px 24px;
+      font-size: .85rem;
+      border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
-      transition: background .15s, opacity .15s;
+      border: none;
       font-family: var(--font);
-      white-space: nowrap;
+      background: #4255ff;
+      color: #fff;
     }
-    .btn-checkin:hover:not(:disabled) { 
+    .admin-section .admin-row .btn:hover {
       background: #3345e8;
     }
-    .btn-checkin:disabled {
+    .admin-section .admin-row .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-    .btn-checkin.checked-in {
-      background: #4255ff;
-      opacity: 0.6;
-    }
-    .btn-checkin.late {
-      background: #4255ff;
-      opacity: 0.6;
-    }
 
-    /* ===== CALENDAR HEATMAP ===== */
+    .heatmap-day .status-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      font-size: 0.5rem;
+      padding: 1px 4px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-weight: 600;
+      display: none;
+    }
+    .heatmap-day.has-data .status-badge {
+      display: block;
+    }
+    .heatmap-day .status-badge.present { background: #40c463; }
+    .heatmap-day .status-badge.late { background: #f9c74f; color: #333; }
+    .heatmap-day .status-badge.absent { background: #f94144; }
+
     .calendar-heatmap {
       margin-top: 4px;
     }
@@ -80,6 +128,10 @@
     .heatmap-title {
       font-weight: 600;
       font-size: 0.9rem;
+    }
+    .heatmap-title .emp-name {
+      color: #4255ff;
+      font-weight: 700;
     }
     .heatmap-nav {
       display: flex;
@@ -158,6 +210,11 @@
       outline-offset: 1px;
       font-weight: 700;
     }
+    .heatmap-day.future {
+      background: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
     .heatmap-day.empty {
       background: transparent;
       color: transparent;
@@ -225,6 +282,27 @@
     .heatmap-legend-dot.absent { background: #d1d5db; border: 1px solid #b0b4b8; }
     .heatmap-legend-dot.sunday-dot { background: #f3f4f6; border: 1px solid #d0d4d8; }
 
+    /* ===== RULES SECTION - ĐƠN GIẢN ===== */
+    .rules-section {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: #f8f9fc;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .rules-section .rules-text {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .rules-section .rules-text strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .rules-section .rules-text .green { color: #40c463; font-weight: 600; }
+    .rules-section .rules-text .yellow { color: #fab105; font-weight: 600; }
+    .rules-section .rules-text .gray { color: #6b7280; font-weight: 600; }
+
     @media (max-width: 600px) {
       .attendance-clock {
         flex-direction: column;
@@ -237,11 +315,10 @@
       .clock-time {
         font-size: 1.4rem;
       }
-      .btn-checkin {
-        width: 100%;
-        text-align: center;
-        padding: 10px 20px;
-        font-size: 0.9rem;
+      .admin-section .admin-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
       }
       .heatmap-grid {
         gap: 2px;
@@ -267,6 +344,32 @@
     </div>
 
     <div class="card" style="padding: 16px 20px;">
+      <!-- ADMIN SECTION -->
+      <div class="admin-section" id="admin-section">
+        <div class="admin-row">
+          <div class="form-group">
+            <label>Chọn nhân viên</label>
+            <select id="att-emp-id" onchange="onEmployeeChange()">
+              <option value="">Chọn nhân viên...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Trạng thái</label>
+            <select id="att-status">
+              <option value="present">Có mặt</option>
+              <option value="late">Đi muộn</option>
+              <option value="absent">Vắng</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ngày</label>
+            <input type="date" id="att-date" max="" />
+          </div>
+          <button class="btn" id="admin-checkin-btn" onclick="adminCheckin()">Điểm danh</button>
+        </div>
+      </div>
+
+      <!-- CLOCK + USER CHECKIN -->
       <div class="attendance-clock">
         <div class="clock-display">
           <span class="clock-icon">🕐</span>
@@ -275,7 +378,7 @@
             <div class="clock-date" id="clock-date">--/--/----</div>
           </div>
         </div>
-        <button class="btn-checkin" id="btn-checkin" onclick="handleCheckin()">
+        <button class="btn" id="btn-user-checkin" onclick="userCheckin()" style="display:none;padding:10px 28px;font-size:0.95rem;border-radius:10px;border:none;font-weight:600;cursor:pointer;font-family:var(--font);background:#4255ff;color:#fff;">
           Điểm danh
         </button>
       </div>
@@ -284,29 +387,42 @@
     <div class="card" style="padding: 16px 20px;">
       <div class="calendar-heatmap">
         <div class="heatmap-header">
-          <span class="heatmap-title">Lịch sử điểm danh</span>
-          <div class="heatmap-nav">
+          <span class="heatmap-title" id="heatmap-title">Lịch sử điểm danh</span>
+          <div class="heatmap-nav" id="heatmap-nav">
             <button onclick="changeMonth(-1)">‹</button>
             <span class="month-label" id="month-label">Tháng 6 2026</span>
             <button onclick="changeMonth(1)">›</button>
           </div>
         </div>
 
-        <div class="heatmap-grid" id="heatmap-grid"></div>
+        <!-- Calendar grid - Ẩn khi admin chưa chọn nhân viên -->
+        <div id="heatmap-container">
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
 
         <div class="heatmap-legend">
           <span class="heatmap-legend-item">
-            <span class="heatmap-legend-dot present"></span> Đúng giờ
+            <span class="heatmap-legend-dot present"></span> Có mặt
           </span>
           <span class="heatmap-legend-item">
-            <span class="heatmap-legend-dot late"></span> Trong giờ
+            <span class="heatmap-legend-dot late"></span> Đi muộn
           </span>
           <span class="heatmap-legend-item">
-            <span class="heatmap-legend-dot absent"></span> Không điểm danh
+            <span class="heatmap-legend-dot absent"></span> Vắng
           </span>
           <span class="heatmap-legend-item">
             <span class="heatmap-legend-dot sunday-dot"></span> Chủ nhật
           </span>
+        </div>
+
+        <!-- ===== RULES - 3 DÒNG ĐƠN GIẢN ===== -->
+        <div class="rules-section">
+          <div class="rules-text">
+            <strong>Quy định điểm danh:</strong><br />
+             <span class="green">Có mặt</span> — Điểm danh trước <strong>9:00</strong><br />
+             <span class="yellow">Đi muộn</span> — Điểm danh từ <strong>9:00</strong> đến <strong>9:15</strong><br />
+             <span class="gray">Vắng</span> — Điểm danh sau <strong>9:15</strong> hoặc không điểm danh
+          </div>
         </div>
       </div>
     </div>
@@ -318,21 +434,108 @@
 <script>
   let currentUser = null;
   let attendanceData = {};
+  let allAttendanceRecords = [];
   let currentMonth = new Date().getMonth();
   let currentYear = new Date().getFullYear();
   let clockInterval = null;
-  let hasCheckedInToday = false;
+  let isAdmin = false;
+  let currentViewEmployeeId = null;
+  let employeeMap = {};
+
+  const today = new Date().toISOString().split("T")[0];
+
+  function getStatusByTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
+
+    const WORK_START = 9 * 60;
+    const LATE_THRESHOLD = 9 * 60 + 15;
+
+    if (totalMinutes <= WORK_START) {
+      return 'present';
+    } else if (totalMinutes <= LATE_THRESHOLD) {
+      return 'late';
+    } else {
+      return 'absent';
+    }
+  }
 
   async function init() {
     currentUser = await requireLogin();
     if (!currentUser) return;
 
+    isAdmin = currentUser.role === "admin";
+
     renderSidebar("attendance", currentUser);
 
+    if (isAdmin) {
+      document.getElementById("admin-section").style.display = "block";
+      document.getElementById("att-date").max = today;
+      document.getElementById("att-date").value = today;
+      
+      // Admin: Ẩn calendar ban đầu, chỉ hiện title
+      document.getElementById("heatmap-container").style.display = "none";
+      document.getElementById("heatmap-nav").style.display = "none";
+      
+      await loadEmployeeList();
+    } else {
+      document.getElementById("btn-user-checkin").style.display = "inline-block";
+      // User: hiện calendar luôn
+      document.getElementById("heatmap-container").style.display = "block";
+      document.getElementById("heatmap-nav").style.display = "flex";
+    }
+
     startClock();
-    await loadAttendanceData();
-    renderCalendar();
-    await checkTodayStatus();
+    
+    if (!isAdmin) {
+      await loadAttendanceData();
+      renderCalendar();
+    }
+  }
+
+  async function loadEmployeeList() {
+    const res = await API.get("/auth/employees");
+    if (!res.success) return;
+    const sel = document.getElementById("att-emp-id");
+    
+    const employees = res.data.filter(e => e.role === "employee");
+    
+    employees.forEach(e => {
+      employeeMap[e.id] = e.name;
+    });
+    
+    sel.innerHTML = `<option value="">Chọn nhân viên...</option>` +
+      employees.map(e => `<option value="${e.id}">${e.name} (${e.department || 'Chưa có phòng ban'})</option>`).join("");
+    
+    // Không tự động chọn nhân viên đầu tiên
+    // Để trống để user phải chọn
+  }
+
+  async function onEmployeeChange() {
+    const sel = document.getElementById("att-emp-id");
+    const empId = sel.value ? parseInt(sel.value) : null;
+    
+    if (empId) {
+      // Có chọn nhân viên → hiển thị calendar
+      currentViewEmployeeId = empId;
+      document.getElementById("heatmap-container").style.display = "block";
+      document.getElementById("heatmap-nav").style.display = "flex";
+      document.getElementById("heatmap-title").innerHTML = `Lịch sử điểm danh của <span class="emp-name">${employeeMap[empId] || 'Nhân viên'}</span>`;
+      await loadAttendanceData();
+      renderCalendar();
+    } else {
+      // Chọn lại "Chọn nhân viên..." → ẩn calendar
+      currentViewEmployeeId = null;
+      document.getElementById("heatmap-container").style.display = "none";
+      document.getElementById("heatmap-nav").style.display = "none";
+      document.getElementById("heatmap-title").innerHTML = 'Lịch sử điểm danh (chọn nhân viên để xem)';
+    }
+  }
+
+  function getEmployeeName(id) {
+    return employeeMap[id] || `ID ${id}`;
   }
 
   function startClock() {
@@ -344,7 +547,6 @@
     const now = new Date();
     const timeStr = now.toLocaleTimeString('vi-VN', { hour12: false });
     const dateStr = now.toLocaleDateString('vi-VN');
-
     document.getElementById('clock-time').textContent = timeStr;
     document.getElementById('clock-date').textContent = dateStr;
   }
@@ -362,94 +564,89 @@
     return now.toLocaleTimeString('vi-VN', { hour12: false });
   }
 
-  function getStatusByTime() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const totalMinutes = hours * 60 + minutes;
-
-    const WORK_START = 9 * 60;
-    const WORK_END = 17 * 60;
-
-    if (totalMinutes < WORK_START) {
-      return 'present';
-    } else if (totalMinutes <= WORK_END) {
-      return 'late';
-    } else {
-      return 'absent';
-    }
-  }
-
-  async function checkTodayStatus() {
-    const today = getTodayStr();
-    const data = attendanceData[today];
-    const btn = document.getElementById('btn-checkin');
-
-    if (data) {
-      hasCheckedInToday = true;
-      btn.disabled = true;
-      
-      const status = data.status;
-
-      if (status === 'present') {
-        btn.textContent = 'Điểm danh';
-        btn.className = 'btn-checkin checked-in';
-      } else if (status === 'late') {
-        btn.textContent = 'Điểm danh';
-        btn.className = 'btn-checkin late';
-      } else if (status === 'absent') {
-        btn.textContent = 'Nghỉ';
-        btn.className = 'btn-checkin';
-        btn.style.opacity = '0.6';
-      }
-    } else {
-      btn.disabled = false;
-      btn.textContent = 'Điểm danh';
-      btn.className = 'btn-checkin';
-      btn.style.opacity = '1';
-    }
-  }
-
-  async function handleCheckin() {
-    if (hasCheckedInToday) {
-      showToast('Bạn đã điểm danh hôm nay rồi!', 'error');
-      return;
-    }
-
-    const today = getTodayStr();
+  // ===== USER CHECKIN =====
+  async function userCheckin() {
+    const todayStr = getTodayStr();
     const time = getTimeStr();
     const status = getStatusByTime();
 
     const body = {
-      date: today,
+      date: todayStr,
       status: status,
       note: `Điểm danh lúc ${time}`
     };
 
-    if (currentUser.role === 'admin') {
-      const empSelect = document.getElementById('att-emp-id');
-      if (empSelect && empSelect.value) {
-        body.employee_id = parseInt(empSelect.value);
-      }
-    }
-
     const res = await API.post("/attendance", body);
     showToast(res.message, res.success ? "success" : "error");
-
     if (res.success) {
-      attendanceData[today] = { status, time };
-      hasCheckedInToday = true;
-      await checkTodayStatus();
+      await loadAttendanceData();
+      renderCalendar();
+    }
+  }
+
+  // ===== ADMIN CHECKIN =====
+  async function adminCheckin() {
+    const employee_id = parseInt(document.getElementById("att-emp-id").value);
+    const date = document.getElementById("att-date").value;
+    const status = document.getElementById("att-status").value;
+
+    if (!employee_id) {
+      showToast('Vui lòng chọn nhân viên!', 'error');
+      return;
+    }
+    if (!date) {
+      showToast('Vui lòng chọn ngày!', 'error');
+      return;
+    }
+
+    if (date > today) {
+      showToast('Không thể điểm danh cho ngày trong tương lai!', 'error');
+      return;
+    }
+
+    const checkRes = await API.get(`/attendance?month=${date.slice(0,7)}`);
+    let existingRecord = null;
+    if (checkRes.success) {
+      existingRecord = checkRes.data.find(a => a.date === date && a.employee_id === employee_id);
+    }
+
+    let res;
+    if (existingRecord) {
+      res = await API.put(`/attendance/${existingRecord.id}`, {
+        status: status,
+        note: `Admin sửa trạng thái thành ${status}`
+      });
+    } else {
+      res = await API.post("/attendance", {
+        employee_id: employee_id,
+        date: date,
+        status: status,
+        note: `Admin điểm danh`
+      });
+    }
+
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      await loadAttendanceData();
       renderCalendar();
     }
   }
 
   async function loadAttendanceData() {
     const month = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-    const res = await API.get(`/attendance?month=${month}`);
+    let url = `/attendance?month=${month}`;
+
+    if (isAdmin && currentViewEmployeeId) {
+      url += `&employee_id=${currentViewEmployeeId}`;
+    }
+
+    const res = await API.get(url);
     
     attendanceData = {};
+    allAttendanceRecords = [];
+    
     if (res.success && res.data) {
+      allAttendanceRecords = res.data;
       res.data.forEach(item => {
         let time = '';
         if (item.note && item.note.includes('lúc')) {
@@ -458,7 +655,8 @@
         }
         attendanceData[item.date] = {
           status: item.status,
-          time: time
+          time: time,
+          id: item.id
         };
       });
     }
@@ -474,7 +672,7 @@
 
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const today = getTodayStr();
+    const todayStr = getTodayStr();
 
     const weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
     let html = '';
@@ -491,7 +689,8 @@
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const data = attendanceData[dateStr];
-      const isToday = dateStr === today;
+      const isToday = dateStr === todayStr;
+      const isFuture = dateStr > todayStr;
       const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
       const isSunday = dayOfWeek === 0;
 
@@ -499,25 +698,30 @@
       let tooltipText = `${d}/${currentMonth + 1}/${currentYear}`;
       let hasData = false;
       let displayText = String(d);
+      let statusBadge = '';
 
       if (isSunday) {
         cls += ' sunday';
         displayText = 'Nghỉ';
         tooltipText += ' - Chủ nhật nghỉ';
+      } else if (isFuture) {
+        cls += ' future';
+        tooltipText += ' - Chưa đến';
       } else {
         if (data) {
           hasData = true;
           cls += ` ${data.status}`;
           const statusMap = {
-            'present': 'Đúng giờ',
-            'late': 'Trong giờ',
-            'absent': 'Nghỉ'
+            'present': 'Có mặt',
+            'late': 'Đi muộn',
+            'absent': 'Vắng'
           };
           tooltipText += ` - ${statusMap[data.status] || data.status}`;
           if (data.time) tooltipText += ` (${data.time})`;
+          statusBadge = `<span class="status-badge ${data.status}">${statusMap[data.status] || data.status}</span>`;
         } else {
           cls += ' absent';
-          tooltipText += ' - Không điểm danh';
+          tooltipText += ' - Chưa điểm danh';
         }
       }
 
@@ -527,6 +731,7 @@
       html += `
         <div class="${cls}" data-date="${dateStr}">
           ${displayText}
+          ${statusBadge}
           ${hasData ? `<div class="tooltip">${tooltipText}</div>` : ''}
         </div>
       `;

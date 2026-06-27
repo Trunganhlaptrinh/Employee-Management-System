@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": 1,
+    "employee_id": 6,
+    "month": "2026-06",
+    "base": 100000.0,
+    "bonus": 0.0,
+    "deduction": 0.0,
+    "total": 100000.0
+  }
+]
