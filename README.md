@@ -1,10 +1,10 @@
-# 🏢 SmartEMS — Employee Management System
+#  SmartEMS — Employee Management System
 
-> Hệ thống quản lý nhân viên thông minh với các chức năng: **Điểm danh**, **Nghỉ phép**, **Lương thưởng**, **Quản lý hồ sơ**.
+> Hệ thống quản lý nhân viên thông minh với các chức năng vippro
 
 ---
 
-## 📋 Yêu cầu hệ thống
+##  Yêu cầu hệ thống
 
 | Công cụ | Phiên bản | Ghi chú |
 |---------|-----------|---------|
@@ -119,6 +119,5 @@ Nhấn `Ctrl + C` trong terminal.
 2. Nhập **Username** và **Password**
 3. Nhấn **"Đăng nhập"**
 
----
 
-<p align="center"><sub>SmartEMS — Tài liệu hướng dẫn cài đặt & sử dụng</sub></p>
+Trải nghiệm vui vẻ :D
