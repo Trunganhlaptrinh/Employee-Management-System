@@ -5,18 +5,12 @@
 // =============================
 // CẤU HÌNH API BASE URL
 // =============================
-// Khi chạy local: "http://localhost:5000/api"
-// Khi deploy lên Render: đổi thành URL của Render
-// cùng server nên dùng đường dẫn tương đối, không cần ghi full URL
-// khi deploy lên Render thì tự động đúng luôn, không cần sửa
 const BASE_URL = "/api";
 
 // =============================
 // API HELPER
-// tương tự các hàm static trong Validation.java
 // =============================
 const API = {
-  // gọi GET request
   async get(path) {
     try {
       const res = await fetch(BASE_URL + path, {
@@ -29,7 +23,6 @@ const API = {
     }
   },
 
-  // gọi POST request với body JSON
   async post(path, body) {
     try {
       const res = await fetch(BASE_URL + path, {
@@ -45,7 +38,6 @@ const API = {
     }
   },
 
-  // gọi PUT request (cập nhật)
   async put(path, body) {
     try {
       const res = await fetch(BASE_URL + path, {
@@ -61,7 +53,6 @@ const API = {
     }
   },
 
-  // gọi DELETE request
   async delete(path) {
     try {
       const res = await fetch(BASE_URL + path, {
@@ -78,7 +69,6 @@ const API = {
 
 // =============================
 // TOAST NOTIFICATION
-// hiển thị thông báo góc dưới phải
 // =============================
 let toastTimer = null;
 
@@ -160,14 +150,11 @@ let cachedAvatar = null;
 let avatarLoading = false;
 
 async function getUserAvatar() {
-  // Nếu đã có trong cache thì trả về luôn
   if (cachedAvatar !== null) {
     return cachedAvatar;
   }
 
-  // Tránh gọi API nhiều lần cùng lúc
   if (avatarLoading) {
-    // Chờ cho đến khi load xong
     return new Promise((resolve) => {
       const checkCache = setInterval(() => {
         if (!avatarLoading) {
@@ -207,16 +194,25 @@ function renderSidebar(currentPage, user) {
       <img src="image/logo_quan_li_nhan_vien.png" style="height:18px;width:18px;object-fit:contain;" />
       HR
     </a>
+    <a class="nav-item ${currentPage === 'assets' ? 'active' : ''}" href="assets.html">
+      <img src="image/logo_tai_san.png" style="height:18px;width:18px;object-fit:contain;" />
+      Tài sản
+    </a>
+    <a class="nav-item ${currentPage === 'risks' ? 'active' : ''}" href="risks.html">
+      <img src="image/logo_rui_ro.png" style="height:18px;width:18px;object-fit:contain;" />
+      Rủi ro
+    </a>
+    <a class="nav-item ${currentPage === 'incidents' ? 'active' : ''}" href="incidents.html">
+      <img src="image/logo_su_co.png" style="height:18px;width:18px;object-fit:contain;" />
+      Sự cố
+    </a>
   ` : "";
 
-  // Render sidebar với Profile ở nhóm "Quản lý"
   document.getElementById("sidebar").innerHTML = `
     <div class="sidebar-logo">
       <img src="image/logo_E.png" style="height:22px;vertical-align:middle;margin-right:6px;" />
       Smart<span>EMS</span>
     </div>
-
-    
 
     <a class="nav-item ${currentPage === 'dashboard' ? 'active' : ''}" href="dashboard.html">
       <img src="image/logo_ngoi_nha.png" style="height:18px;width:18px;object-fit:contain;" />
@@ -240,10 +236,11 @@ function renderSidebar(currentPage, user) {
 
     ${adminLinks}
 
-    <!-- Phần Quản lý và Đăng xuất -->
     <div class="sidebar-bottom">
       <a class="nav-item ${currentPage === 'profile' ? 'active' : ''}" href="profile.html" style="margin-bottom:4px;">
-        <span class="profile-avatar-container"><span class="icon">👤</span></span>
+        <span class="profile-avatar-container">
+          <img src="image/logo_profile_co_ban.png" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);" id="sidebar-avatar" />
+        </span>
         Profile
       </a>
       <button class="nav-item" onclick="doLogout()">
@@ -253,18 +250,13 @@ function renderSidebar(currentPage, user) {
     </div>
   `;
 
-  // Cập nhật avatar cho Profile
   getUserAvatar().then(avatar => {
     const sidebar = document.getElementById("sidebar");
     if (!sidebar) return;
 
-    const profileContainer = sidebar.querySelector('.profile-avatar-container');
-    if (profileContainer) {
-      if (avatar) {
-        profileContainer.innerHTML = `<img src="${avatar}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);" />`;
-      } else {
-        profileContainer.innerHTML = `<span class="icon">👤</span>`;
-      }
+    const avatarImg = sidebar.querySelector('#sidebar-avatar');
+    if (avatarImg && avatar) {
+      avatarImg.src = avatar;
     }
   });
 }
@@ -274,20 +266,16 @@ function renderSidebar(currentPage, user) {
 // =============================
 async function doLogout() {
   await API.post("/auth/logout", {});
-  // Reset cache avatar khi đăng xuất
   cachedAvatar = null;
   window.location.href = "index.html";
 }
 
 // =============================
-// HÀM LÀM MỚI AVATAR TRÊN SIDEBAR (gọi sau khi upload avatar)
+// HÀM LÀM MỚI AVATAR TRÊN SIDEBAR
 // =============================
 function refreshSidebarAvatar() {
-  // Reset cache để load lại avatar mới
   cachedAvatar = null;
-  // Gọi lại renderSidebar với page hiện tại
   const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'dashboard';
-  // Lấy thông tin user từ session
   API.get("/auth/me").then(res => {
     if (res.success) {
       renderSidebar(currentPage, res);

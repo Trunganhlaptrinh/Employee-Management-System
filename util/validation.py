@@ -93,3 +93,12 @@ class Validation:
         d2 = datetime.strptime(to_date,   "%Y-%m-%d")
         if d1 > d2:
             raise ValueError("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc")
+      # ========================
+    # KIỂM TRA GIÁ TRỊ TRONG DANH SÁCH
+    # ========================
+    @staticmethod
+    def check_in_list(value: str, allowed_list: list, field_name: str) -> str:
+        value = Validation.check_not_empty(value, field_name)
+        if value not in allowed_list:
+            raise ValueError(f"{field_name} phải là: {', '.join(allowed_list)}")
+        return value

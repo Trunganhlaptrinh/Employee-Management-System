@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<!-- view/assets.html — Quản lý tài sản CNTT -->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tài sản — EmpManager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="image/logo_E.png" />
+</head>
+<body>
+
+<div class="page-wrap">
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Quản lý tài sản CNTT</h1>
+      <p>Danh sách các tài sản quan trọng của doanh nghiệp</p>
+    </div>
+
+    <!-- FORM THÊM TÀI SẢN -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Thêm tài sản mới</h2>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tên tài sản *</label>
+          <input type="text" id="asset-name" placeholder="VD: Production Database" />
+        </div>
+        <div class="form-group">
+          <label>Loại tài sản *</label>
+          <select id="asset-type">
+            <option value="Server">Server</option>
+            <option value="Database">Database</option>
+            <option value="Application">Application</option>
+            <option value="Network Device">Network Device</option>
+            <option value="Data Storage">Data Storage</option>
+            <option value="API Service">API Service</option>
+            <option value="Website">Website</option>
+            <option value="Employee Device">Employee Device</option>
+            <option value="Cloud Service">Cloud Service</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mức độ quan trọng *</label>
+          <select id="asset-criticality">
+            <option value="Critical">Critical - Rất quan trọng</option>
+            <option value="High">High - Quan trọng</option>
+            <option value="Medium">Medium - Trung bình</option>
+            <option value="Low">Low - Thấp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Chủ sở hữu</label>
+          <input type="text" id="asset-owner" placeholder="Tên người quản lý" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vị trí</label>
+          <input type="text" id="asset-location" placeholder="VD: Data Center, AWS..." />
+        </div>
+        <div class="form-group">
+          <label>Mô tả</label>
+          <input type="text" id="asset-desc" placeholder="Mô tả chi tiết về tài sản" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addAsset()">Thêm tài sản</button>
+    </div>
+
+    <!-- DANH SÁCH TÀI SẢN -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Danh sách tài sản</h2>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" id="search-asset" 
+                 placeholder="Tìm kiếm..." 
+                 style="padding:6px 12px;border:1.5px solid #e4e7ec;border-radius:8px;font-family:inherit;font-size:.9rem;"
+                 oninput="loadAssets()" />
+          <span id="asset-count" style="color:#6b7280;font-size:.88rem;"></span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên tài sản</th>
+              <th>Loại</th>
+              <th>Quan trọng</th>
+              <th>Chủ sở hữu</th>
+              <th>Vị trí</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="asset-body">
+            <tr><td colspan="7" class="empty">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL SỬA TÀI SẢN -->
+<div class="modal-overlay" id="edit-asset-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Sửa tài sản</h2>
+      <button class="modal-close" onclick="closeModal('edit-asset-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-asset-id" />
+    
+    <div class="form-group">
+      <label>Tên tài sản *</label>
+      <input type="text" id="edit-asset-name" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Loại tài sản</label>
+        <select id="edit-asset-type">
+          <option value="Server">Server</option>
+          <option value="Database">Database</option>
+          <option value="Application">Application</option>
+          <option value="Network Device">Network Device</option>
+          <option value="Data Storage">Data Storage</option>
+          <option value="API Service">API Service</option>
+          <option value="Website">Website</option>
+          <option value="Employee Device">Employee Device</option>
+          <option value="Cloud Service">Cloud Service</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mức độ quan trọng</label>
+        <select id="edit-asset-criticality">
+          <option value="Critical">Critical - Rất quan trọng</option>
+          <option value="High">High - Quan trọng</option>
+          <option value="Medium">Medium - Trung bình</option>
+          <option value="Low">Low - Thấp</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Chủ sở hữu</label>
+        <input type="text" id="edit-asset-owner" />
+      </div>
+      <div class="form-group">
+        <label>Vị trí</label>
+        <input type="text" id="edit-asset-location" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Mô tả</label>
+      <input type="text" id="edit-asset-desc" />
+    </div>
+    
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('edit-asset-modal')">Hủy</button>
+      <button class="btn btn-primary" onclick="saveEditAsset()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="main.js"></script>
+<script>
+  let currentUser = null;
+
+  async function init() {
+    currentUser = await requireLogin();
+    if (!currentUser) return;
+
+    if (currentUser.role !== "admin") {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    renderSidebar("assets", currentUser);
+    await loadAssets();
+  }
+
+  async function addAsset() {
+    const name = document.getElementById("asset-name").value.trim();
+    const asset_type = document.getElementById("asset-type").value;
+    const criticality = document.getElementById("asset-criticality").value;
+    const owner = document.getElementById("asset-owner").value.trim();
+    const location = document.getElementById("asset-location").value.trim();
+    const description = document.getElementById("asset-desc").value.trim();
+
+    if (!name) return showToast("Vui lòng nhập tên tài sản", "error");
+
+    const res = await API.post("/assets", {
+      name, asset_type, criticality, owner, location, description
+    });
+
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      document.getElementById("asset-name").value = "";
+      document.getElementById("asset-owner").value = "";
+      document.getElementById("asset-location").value = "";
+      document.getElementById("asset-desc").value = "";
+      await loadAssets();
+    }
+  }
+
+  async function loadAssets() {
+    const search = document.getElementById("search-asset")?.value?.trim() || "";
+    const res = await API.get("/assets");
+    const tbody = document.getElementById("asset-body");
+
+    if (!res.success) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Không tải được danh sách</td></tr>`;
+      return;
+    }
+
+    let filtered = res.data;
+    if (search) {
+      const keyword = search.toLowerCase();
+      filtered = res.data.filter(a => 
+        a.name.toLowerCase().includes(keyword) ||
+        a.asset_type.toLowerCase().includes(keyword) ||
+        (a.owner && a.owner.toLowerCase().includes(keyword))
+      );
+    }
+
+    document.getElementById("asset-count").textContent = filtered.length + " tài sản";
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Không tìm thấy tài sản</td></tr>`;
+      return;
+    }
+
+    const criticalityColors = {
+      Critical: 'badge-red',
+      High: 'badge-yellow',
+      Medium: 'badge-blue',
+      Low: 'badge-gray'
+    };
+
+    tbody.innerHTML = filtered.map(a => `
+      <tr>
+        <td style="color:#9ca3af">#${a.id}</td>
+        <td style="font-weight:500;">${a.name}</td>
+        <td>${a.asset_type}</td>
+        <td><span class="badge ${criticalityColors[a.criticality] || 'badge-gray'}">${a.criticality}</span></td>
+        <td>${a.owner || "—"}</td>
+        <td>${a.location || "—"}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="openEditAsset(${a.id})">Sửa</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAsset(${a.id},'${a.name}')">Xóa</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function openEditAsset(id) {
+    const res = await API.get("/assets");
+    if (!res.success) return;
+    
+    const asset = res.data.find(a => a.id === id);
+    if (!asset) return showToast("Không tìm thấy tài sản", "error");
+
+    document.getElementById("edit-asset-id").value = asset.id;
+    document.getElementById("edit-asset-name").value = asset.name;
+    document.getElementById("edit-asset-type").value = asset.asset_type;
+    document.getElementById("edit-asset-criticality").value = asset.criticality;
+    document.getElementById("edit-asset-owner").value = asset.owner || "";
+    document.getElementById("edit-asset-location").value = asset.location || "";
+    document.getElementById("edit-asset-desc").value = asset.description || "";
+
+    openModal("edit-asset-modal");
+  }
+
+  async function saveEditAsset() {
+    const id = document.getElementById("edit-asset-id").value;
+    const name = document.getElementById("edit-asset-name").value.trim();
+    const asset_type = document.getElementById("edit-asset-type").value;
+    const criticality = document.getElementById("edit-asset-criticality").value;
+    const owner = document.getElementById("edit-asset-owner").value.trim();
+    const location = document.getElementById("edit-asset-location").value.trim();
+    const description = document.getElementById("edit-asset-desc").value.trim();
+
+    if (!name) return showToast("Họ tên không được để trống", "error");
+
+    const res = await API.put(`/assets/${id}`, {
+      name, asset_type, criticality, owner, location, description
+    });
+
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      closeModal("edit-asset-modal");
+      await loadAssets();
+    }
+  }
+
+  async function deleteAsset(id, name) {
+    if (!confirm(`Xóa tài sản "${name}"? Hành động này không thể hoàn tác.`)) return;
+    const res = await API.delete(`/assets/${id}`);
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) await loadAssets();
+  }
+
+  init();
+</script>
+</body>
+</html>

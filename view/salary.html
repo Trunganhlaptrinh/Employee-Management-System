@@ -233,6 +233,15 @@
       font-family: var(--font);
       font-weight: 500;
     }
+    .statement-item .stemp-actions .export-btn {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+    .statement-item .stemp-actions .export-btn:hover {
+      background: #16a34a;
+      color: #fff;
+    }
     .statement-item .stemp-actions .edit-btn {
       background: #eef0ff;
       color: var(--accent);
@@ -590,8 +599,16 @@
       if (isAdmin) {
         actions = `
           <div class="stemp-actions">
+            <button class="export-btn" onclick="exportPayslip(${item.id}, '${item.name}', '${item.date}')">Phiếu lương</button>
             <button class="edit-btn" onclick="openEditTrans(${item.id}, ${item.amount})">Sửa</button>
             <button class="del-btn" onclick="deleteTrans(${item.id})">Xóa</button>
+          </div>
+        `;
+      } else {
+        // User cũng xuất phiếu của mình được
+        actions = `
+          <div class="stemp-actions">
+            <button class="export-btn" onclick="exportPayslip(${item.id}, '${item.name}', '${item.date}')">Phiếu lương</button>
           </div>
         `;
       }
@@ -825,6 +842,33 @@
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("filter-month").addEventListener('change', loadData);
   });
+
+  // ===== XUẤT PHIẾU LƯƠNG DOCX =====
+  async function exportPayslip(salaryId, empName, month) {
+    showToast("Đang tạo phiếu lương...", "default");
+    try {
+      const res = await fetch(`/api/salary/export?salary_id=${salaryId}`, {
+        credentials: "include"
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        showToast(err.message || "Lỗi xuất phiếu lương", "error");
+        return;
+      }
+      // tải file về
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      const safeName = empName.replace(/\s+/g, "_");
+      a.href     = url;
+      a.download = `phieu_luong_${safeName}_${month}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Xuất phiếu lương thành công!", "success");
+    } catch (err) {
+      showToast("Lỗi kết nối khi xuất phiếu", "error");
+    }
+  }
 
   init();
 </script>

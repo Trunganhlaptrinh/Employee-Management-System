@@ -4,9 +4,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nhân viên — EmpManager</title>
+  <title>Nhân viên — SmartEMS</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="image/logo_E.png" />
+  <style>
+    .avatar-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #e4e7ec;
+      background: #f1f2f4;
+      display: block;
+    }
+    .avatar-circle.admin-avatar {
+      border-color: #4255ff;
+    }
+    .avatar-circle.employee-avatar {
+      border-color: #23b26d;
+    }
+    .emp-table td {
+      vertical-align: middle;
+      padding: 8px 10px;
+    }
+    .emp-table .avatar-cell {
+      width: 44px;
+      text-align: center;
+    }
+    .emp-table .actions-cell {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .emp-table .actions-cell .btn-sm {
+      padding: 4px 12px;
+      font-size: .75rem;
+      border-radius: 6px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 600;
+    }
+    .badge-blue {
+      background: #eef0ff;
+      color: #4255ff;
+    }
+    .badge-gray {
+      background: #f1f2f4;
+      color: #6b7280;
+    }
+    .btn-secondary {
+      background: #eef0ff;
+      color: #4255ff;
+    }
+    .btn-secondary:hover {
+      background: #4255ff;
+      color: #fff;
+    }
+    .btn-danger {
+      background: #fde8e8;
+      color: #b91c1c;
+    }
+    .btn-danger:hover {
+      background: #b91c1c;
+      color: #fff;
+    }
+  </style>
 </head>
 <body>
 
@@ -30,7 +97,7 @@
           <input type="text" id="emp-name" placeholder="Nguyễn Văn A" />
         </div>
         <div class="form-group">
-          <label>Username *</label>
+          <label>Tên đăng nhập *</label>
           <input type="text" id="emp-username" placeholder="nguyenvana" />
         </div>
       </div>
@@ -75,12 +142,13 @@
         </div>
       </div>
       <div class="table-wrap">
-        <table>
+        <table class="emp-table">
           <thead>
             <tr>
+              <th style="width:44px;">Ảnh</th>
               <th>ID</th>
               <th>Họ tên</th>
-              <th>Username</th>
+              <th>Tên đăng nhập</th>
               <th>Phòng ban</th>
               <th>Vai trò</th>
               <th>Lương CB</th>
@@ -88,7 +156,7 @@
             </tr>
           </thead>
           <tbody id="emp-body">
-            <tr><td colspan="7" class="empty">Đang tải...</td></tr>
+            <tr><td colspan="8" class="empty">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -166,7 +234,7 @@
 
     // Validate
     if (!name) return showToast("Vui lòng nhập họ tên", "error");
-    if (!username || username.length < 3) return showToast("Username ít nhất 3 ký tự", "error");
+    if (!username || username.length < 3) return showToast("Tên đăng nhập ít nhất 3 ký tự", "error");
     if (!password || password.length < 6) return showToast("Mật khẩu ít nhất 6 ký tự", "error");
 
     const res = await API.post("/auth/employees", {
@@ -188,7 +256,7 @@
     const tbody = document.getElementById("emp-body");
 
     if (!res.success) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty">Không tải được danh sách</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">Không tải được danh sách</td></tr>`;
       return;
     }
 
@@ -206,25 +274,34 @@
     document.getElementById("emp-count").textContent = filtered.length + " nhân viên";
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty">Không tìm thấy nhân viên nào</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">Không tìm thấy nhân viên nào</td></tr>`;
       return;
     }
 
     tbody.innerHTML = filtered.map(e => {
       const isSelf = e.id === currentUser.employee_id;
+      const avatarUrl = e.avatar || "image/logo_profile_co_ban.png";
+      const isAdmin = e.role === "admin";
+      
       return `
         <tr>
-          <td style="color:#9ca3af">#${e.id}</td>
-          <td style="font-weight:500;">${e.name}</td>
-          <td style="color:#6b7280">${e.username}</td>
+          <td class="avatar-cell">
+            <img src="${avatarUrl}" 
+                 class="avatar-circle ${isAdmin ? 'admin-avatar' : 'employee-avatar'}" 
+                 alt="${e.name}" 
+                 onerror="this.src='image/logo_profile_co_ban.png'" />
+          </td>
+          <td style="color:#9ca3af;font-weight:500;">#${e.id}</td>
+          <td style="font-weight:600;">${e.name}</td>
+          <td style="color:#6b7280;">${e.username}</td>
           <td>${e.department || "—"}</td>
-          <td>${e.role === "admin"
+          <td>${isAdmin
                 ? '<span class="badge badge-blue">Admin</span>'
                 : '<span class="badge badge-gray">Nhân viên</span>'}</td>
-          <td>${formatMoney(e.base_salary)}</td>
-          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+          <td style="font-weight:600;color:var(--text);">${formatMoney(e.base_salary)}</td>
+          <td class="actions-cell">
             ${isSelf 
-              ? '<span style="color:#9ca3af;font-size:.82rem;">Bạn</span>'
+              ? '<span style="color:#9ca3af;font-size:.82rem;font-weight:500;">Bạn</span>'
               : `
                 <button class="btn btn-secondary btn-sm" onclick="openEditEmployee(${e.id})">Sửa</button>
                 <button class="btn btn-danger btn-sm" onclick="removeEmployee(${e.id},'${e.name}')">Xóa</button>

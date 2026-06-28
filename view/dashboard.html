@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tổng quan — EmpManager</title>
+  <title>Tổng quan — SmartEMS</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/png" href="image/logo_E.png" />
@@ -211,6 +211,38 @@
       color: #b91c1c;
     }
 
+    .today-attendance-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .today-attendance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: .85rem;
+    }
+    .today-attendance-item:last-child {
+      border-bottom: none;
+    }
+    .today-attendance-item .name {
+      font-weight: 500;
+    }
+    .today-attendance-item .status {
+      font-weight: 600;
+    }
+    .today-attendance-item .status.present {
+      color: #23b26d;
+    }
+    .today-attendance-item .status.late {
+      color: #d97706;
+    }
+    .today-attendance-item .status.absent {
+      color: #b91c1c;
+    }
+
     @media (max-width: 768px) {
       .dash-grid {
         grid-template-columns: 1fr;
@@ -302,17 +334,9 @@
           <a href="attendance.html" class="btn btn-ghost btn-sm">Xem tất cả</a>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Họ tên</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody id="att-body">
-              <tr><td colspan="2" class="empty">Đang tải...</td></tr>
-            </tbody>
-          </table>
+          <div id="att-body" class="today-attendance-grid">
+            <div class="empty">Đang tải...</div>
+          </div>
         </div>
       </div>
 
@@ -323,18 +347,9 @@
           <a href="leave.html" class="btn btn-ghost btn-sm">Xem tất cả</a>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Họ tên</th>
-                <th>Số ngày</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody id="leave-body">
-              <tr><td colspan="3" class="empty">Đang tải...</td></tr>
-            </tbody>
-          </table>
+          <div id="leave-body" class="today-attendance-grid">
+            <div class="empty">Đang tải...</div>
+          </div>
         </div>
       </div>
     </div>
@@ -362,11 +377,11 @@
     else if (hour < 18) greeting = "Chào buổi chiều";
     else greeting = "Chào buổi tối";
 
-    document.getElementById("greeting").textContent = `${greeting}, ${currentUser.name}`;
+    document.getElementById("greeting").textContent = greeting + ", " + currentUser.name;
     document.getElementById("greeting-sub").textContent = 
       currentUser.role === "admin" ? "Quản lý toàn bộ hệ thống" : "Quản lý thông tin cá nhân";
 
-    // Load employee map TRƯỚC KHI load các bảng
+    // Load employee map trước khi load các bảng
     await loadEmployeeMap();
     await loadStats();
     await loadTodayAttendance();
@@ -382,7 +397,6 @@
         res.data.forEach(emp => {
           employeeMap[emp.id] = emp.name;
         });
-        console.log("Employee map loaded:", employeeMap);
       }
     } catch (err) {
       console.error("Lỗi load employee map:", err);
@@ -391,7 +405,7 @@
 
   // ===== GET EMPLOYEE NAME =====
   function getEmployeeName(id) {
-    return employeeMap[id] || `ID ${id}`;
+    return employeeMap[id] || "ID " + id;
   }
 
   // ===== LOAD STATS =====
@@ -410,113 +424,126 @@
         document.getElementById("stat-pending").textContent = leaveRes.data.length;
       }
 
-      const salaryRes = await API.get(`/salary?month=${month}`);
+      const salaryRes = await API.get("/salary?month=" + month);
       if (salaryRes.success) {
-        const total = salaryRes.data.reduce((sum, s) => sum + s.total, 0);
+        const total = salaryRes.data.reduce(function(sum, s) { return sum + s.total; }, 0);
         document.getElementById("stat-salary").textContent = formatMoney(total);
       }
     } else {
       document.getElementById("stat-employees").textContent = "—";
+
       const leaveRes = await API.get("/leave?status=pending");
       if (leaveRes.success) {
         document.getElementById("stat-pending").textContent = leaveRes.data.length;
       }
 
-      const salaryRes = await API.get(`/salary?month=${month}`);
+      const salaryRes = await API.get("/salary?month=" + month);
       if (salaryRes.success) {
-        const total = salaryRes.data.reduce((sum, s) => sum + s.total, 0);
+        const total = salaryRes.data.reduce(function(sum, s) { return sum + s.total; }, 0);
         document.getElementById("stat-salary").textContent = formatMoney(total);
       }
     }
 
-    const attRes = await API.get(`/attendance?month=${month}`);
+    const attRes = await API.get("/attendance?month=" + month);
     if (attRes.success) {
-      const todayAtt = attRes.data.filter(a => a.date === today);
-      const presentCount = todayAtt.filter(a => a.status === "present").length;
-      document.getElementById("stat-present").textContent = 
-        `${presentCount}/${todayAtt.length}`;
+      const todayAtt = attRes.data.filter(function(a) { return a.date === today; });
+      const presentCount = todayAtt.filter(function(a) { return a.status === "present"; }).length;
+      document.getElementById("stat-present").textContent = presentCount + "/" + todayAtt.length;
     }
   }
 
   // ===== LOAD TODAY ATTENDANCE =====
   async function loadTodayAttendance() {
-    const tbody = document.getElementById("att-body");
+    const container = document.getElementById("att-body");
     
     try {
-      const res = await API.get(`/attendance?month=${today.slice(0,7)}`);
+      const res = await API.get("/attendance?month=" + today.slice(0,7));
       
       if (!res.success) {
-        tbody.innerHTML = `<tr><td colspan="2" class="empty">Lỗi tải dữ liệu</td></tr>`;
+        container.innerHTML = '<div class="empty">Lỗi tải dữ liệu</div>';
         return;
       }
 
-      const todayAtt = res.data.filter(a => a.date === today);
+      const todayAtt = res.data.filter(function(a) { return a.date === today; });
 
       if (todayAtt.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2" class="empty">Chưa có điểm danh hôm nay</td></tr>`;
+        container.innerHTML = '<div class="empty">Chưa có điểm danh hôm nay</div>';
         return;
       }
 
-      // Sắp xếp: Có mặt lên đầu
-      const sorted = todayAtt.sort((a, b) => {
-        const order = { present: 0, late: 1, absent: 2 };
+      // Sắp xếp: có mặt lên đầu
+      var order = { present: 0, late: 1, absent: 2 };
+      todayAtt.sort(function(a, b) {
         return (order[a.status] || 3) - (order[b.status] || 3);
       });
 
-      tbody.innerHTML = sorted.map(a => {
-        const name = getEmployeeName(a.employee_id);
-        return `
-          <tr>
-            <td>${name}</td>
-            <td>${badgeStatus(a.status)}</td>
-          </tr>
-        `;
-      }).join("");
+      var html = '';
+      for (var i = 0; i < todayAtt.length; i++) {
+        var a = todayAtt[i];
+        var name = getEmployeeName(a.employee_id);
+        var statusText = '';
+        var statusClass = '';
+        if (a.status === 'present') {
+          statusText = 'Có mặt';
+          statusClass = 'present';
+        } else if (a.status === 'late') {
+          statusText = 'Đi muộn';
+          statusClass = 'late';
+        } else {
+          statusText = 'Vắng';
+          statusClass = 'absent';
+        }
+        html += '<div class="today-attendance-item">' +
+          '<span class="name">' + name + '</span>' +
+          '<span class="status ' + statusClass + '">' + statusText + '</span>' +
+        '</div>';
+      }
+      container.innerHTML = html;
       
     } catch (err) {
       console.error("Lỗi load điểm danh:", err);
-      tbody.innerHTML = `<tr><td colspan="2" class="empty">Lỗi tải dữ liệu</td></tr>`;
+      container.innerHTML = '<div class="empty">Lỗi tải dữ liệu</div>';
     }
   }
 
   // ===== LOAD PENDING LEAVES =====
   async function loadPendingLeaves() {
-    const tbody = document.getElementById("leave-body");
+    const container = document.getElementById("leave-body");
     
     try {
       const res = await API.get("/leave?status=pending");
 
       if (!res.success) {
-        tbody.innerHTML = `<tr><td colspan="3" class="empty">Lỗi tải dữ liệu</td></tr>`;
+        container.innerHTML = '<div class="empty">Lỗi tải dữ liệu</div>';
         return;
       }
 
       if (res.data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="empty">Không có đơn nghỉ phép chờ duyệt</td></tr>`;
+        container.innerHTML = '<div class="empty">Không có đơn nghỉ phép chờ duyệt</div>';
         return;
       }
 
       // Lấy 5 đơn gần nhất
-      const recent = res.data.slice(-5).reverse();
+      var recent = res.data.slice(-5).reverse();
 
-      tbody.innerHTML = recent.map(lv => {
-        const name = getEmployeeName(lv.employee_id);
-        const d1 = new Date(lv.from_date);
-        const d2 = new Date(lv.to_date);
-        const days = Math.round((d2 - d1) / 86400000) + 1;
+      var html = '';
+      for (var i = 0; i < recent.length; i++) {
+        var lv = recent[i];
+        var name = getEmployeeName(lv.employee_id);
+        var d1 = new Date(lv.from_date);
+        var d2 = new Date(lv.to_date);
+        var days = Math.round((d2 - d1) / 86400000) + 1;
 
-        return `
-          <tr>
-            <td>${name}</td>
-            <td><span class="badge badge-blue">${days} ngày</span></td>
-            <td><span class="leave-status pending">Chờ duyệt</span></td>
-          </tr>
-        `;
-      }).join("");
+        html += '<div class="today-attendance-item">' +
+          '<span class="name">' + name + '</span>' +
+          '<span class="status" style="color:#92400e;font-weight:600;">' + days + ' ngày</span>' +
+        '</div>';
+      }
+      container.innerHTML = html;
       
     } catch (err) {
       console.error("Lỗi load đơn nghỉ:", err);
-      tbody.innerHTML = `<tr><td colspan="3" class="empty">Lỗi tải dữ liệu</td></tr>`;
+      container.innerHTML = '<div class="empty">Lỗi tải dữ liệu</div>';
     }
   }
 

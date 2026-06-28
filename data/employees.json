@@ -48,5 +48,14 @@
     "role": "employee",
     "department": "Red Team",
     "base_salary": 0.0
+  },
+  {
+    "id": 11,
+    "username": "admin123",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "name": "Admin Test",
+    "role": "admin",
+    "department": "Tổng tư lệnh",
+    "base_salary": 10000.0
   }
 ]
