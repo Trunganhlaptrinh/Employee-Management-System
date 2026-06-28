@@ -174,6 +174,90 @@ def delete_salary(salary_id):
 
 
 # ========================
+# LẤY DANH SÁCH NHÂN VIÊN (cho chức năng thưởng)
+# GET /api/salary/employees
+# ========================
+@salary_bp.route("/employees", methods=["GET"])
+def get_employees_for_bonus():
+    if session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Không có quyền"}), 403
+
+    employees = FileHelper.read_all("employees")
+    safe = []
+    for e in employees:
+        safe.append({
+            "id": e["id"],
+            "name": e["name"],
+            "department": e.get("department", ""),
+            "base_salary": e.get("base_salary", 0)
+        })
+    return jsonify({"success": True, "data": safe})
+
+
+# ========================
+# THƯỞNG THÊM CHO NHÂN VIÊN (chỉ admin)
+# POST /api/salary/bonus
+# ========================
+@salary_bp.route("/bonus", methods=["POST"])
+def add_bonus():
+    if session.get("role") != "admin":
+        return jsonify({"success": False, "message": "Không có quyền"}), 403
+
+    data = request.get_json()
+    try:
+        employee_id = int(data.get("employee_id", 0))
+        amount = Validation.check_money(data.get("amount", 0), "Số tiền thưởng")
+        reason = Validation.check_not_empty(data.get("reason", ""), "Lý do thưởng")
+        month = Validation.check_month(data.get("month", datetime.now().strftime("%Y-%m")))
+    except ValueError as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+
+    # Lấy thông tin nhân viên
+    employees = FileHelper.read_all("employees")
+    emp = next((e for e in employees if e["id"] == employee_id), None)
+    if not emp:
+        return jsonify({"success": False, "message": "Không tìm thấy nhân viên"}), 404
+
+    # Kiểm tra xem đã có bảng lương tháng này chưa
+    all_salaries = FileHelper.read_all("salaries")
+    existing = next((s for s in all_salaries if s["employee_id"] == employee_id and s["month"] == month), None)
+
+    if existing:
+        # Nếu đã có, cập nhật thưởng
+        for i, s in enumerate(all_salaries):
+            if s["id"] == existing["id"]:
+                all_salaries[i]["bonus"] = s["bonus"] + amount
+                all_salaries[i]["total"] = s["base"] + all_salaries[i]["bonus"] - s["deduction"]
+                FileHelper.write_all("salaries", all_salaries)
+                return jsonify({
+                    "success": True, 
+                    "message": f"Đã thưởng thêm {format_money(amount)} cho {emp['name']}",
+                    "total": all_salaries[i]["total"]
+                })
+    else:
+        # Nếu chưa có, tạo mới với bonus = amount
+        sal = Salary(
+            employee_id=employee_id,
+            month=month,
+            base=emp["base_salary"],
+            bonus=amount,
+            deduction=0
+        )
+        FileHelper.append_item("salaries", sal.to_dict())
+        return jsonify({
+            "success": True, 
+            "message": f"Đã thưởng {format_money(amount)} cho {emp['name']}",
+            "total": sal.total
+        })
+
+    return jsonify({"success": False, "message": "Có lỗi xảy ra"}), 500
+
+
+def format_money(amount):
+    return f"{amount:,.0f}".replace(",", ".")
+
+
+# ========================
 # XUẤT PHIẾU LƯƠNG DOCX
 # GET /api/salary/export?salary_id=<id>
 # ========================

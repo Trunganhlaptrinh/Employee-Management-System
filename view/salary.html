@@ -335,7 +335,9 @@
     <!-- Admin: Nút chức năng -->
     <div class="salary-actions" id="admin-actions" style="display:none;">
       <button class="btn" onclick="openSalaryModal()">Trả lương tháng</button>
+      <button class="btn" onclick="openBonusModal()"> Thưởng thêm</button>
       <button class="btn" onclick="openEditBaseModal()">Chỉnh sửa</button>
+      
     </div>
 
     <div class="salary-filter">
@@ -441,6 +443,39 @@
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
       <button class="btn btn-ghost" onclick="closeModal('edit-trans-modal')">Hủy</button>
       <button class="btn" style="background:#4255ff;color:#fff;" onclick="submitEditTrans()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL THƯỞNG THÊM (admin) -->
+<div class="modal-overlay" id="bonus-modal">
+  <div class="modal modal-salary">
+    <div class="modal-header">
+      <h2>Thưởng thêm</h2>
+      <button class="modal-close" onclick="closeModal('bonus-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Nhân viên</label>
+      <select id="bonus-emp-id">
+        <option value="">Chọn nhân viên...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tháng</label>
+      <input type="month" id="bonus-month" />
+    </div>
+    <div class="form-group">
+      <label>Số tiền thưởng thêm (₫)</label>
+      <input type="number" id="bonus-amount" min="1" placeholder="Ví dụ: 500000" />
+    </div>
+    <div class="form-group">
+      <label>Lý do thưởng</label>
+      <input type="text" id="bonus-reason" placeholder="Ví dụ: Hoàn thành dự án xuất sắc" />
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('bonus-modal')">Hủy</button>
+      <button class="btn" style="background:#4255ff;color:#fff;" onclick="submitBonus()">Xác nhận thưởng</button>
+
     </div>
   </div>
 </div>
@@ -842,6 +877,38 @@
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("filter-month").addEventListener('change', loadData);
   });
+
+  // ===== THƯỞNG THÊM =====
+  function openBonusModal() {
+    const sel = document.getElementById("bonus-emp-id");
+    sel.innerHTML = '<option value="">Chọn nhân viên...</option>';
+    allEmployees.forEach(emp => {
+      sel.innerHTML += `<option value="${emp.id}">${emp.name} (${emp.department || '—'})</option>`;
+    });
+    document.getElementById("bonus-month").value  = document.getElementById("filter-month").value;
+    document.getElementById("bonus-amount").value = "";
+    document.getElementById("bonus-reason").value = "";
+    openModal("bonus-modal");
+  }
+
+  async function submitBonus() {
+    const employee_id = parseInt(document.getElementById("bonus-emp-id").value);
+    const month       = document.getElementById("bonus-month").value;
+    const amount      = parseFloat(document.getElementById("bonus-amount").value) || 0;
+    const reason      = document.getElementById("bonus-reason").value.trim();
+
+    if (!employee_id) { showToast("Vui lòng chọn nhân viên", "error"); return; }
+    if (!month)       { showToast("Vui lòng chọn tháng", "error"); return; }
+    if (amount <= 0)  { showToast("Số tiền thưởng phải lớn hơn 0", "error"); return; }
+    if (!reason)      { showToast("Vui lòng nhập lý do thưởng", "error"); return; }
+
+    const res = await API.post("/salary/bonus", { employee_id, month, amount, reason });
+    showToast(res.message, res.success ? "success" : "error");
+    if (res.success) {
+      closeModal("bonus-modal");
+      await loadData();
+    }
+  }
 
   // ===== XUẤT PHIẾU LƯƠNG DOCX =====
   async function exportPayslip(salaryId, empName, month) {
