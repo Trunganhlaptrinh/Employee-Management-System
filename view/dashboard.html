@@ -287,11 +287,11 @@
 
     <!-- ===== STATS ROW ===== -->
     <div class="stats-row" id="stats-row">
-      <div class="stat-card blue">
+      <div class="stat-card blue" id="stat-card-employees">
         <div class="stat-value" id="stat-employees">—</div>
         <div class="stat-label">Tổng nhân viên</div>
       </div>
-      <div class="stat-card green">
+      <div class="stat-card green" id="stat-card-present">
         <div class="stat-value" id="stat-present">—</div>
         <div class="stat-label">Điểm danh hôm nay</div>
       </div>
@@ -326,9 +326,9 @@
     </div>
 
     <!-- ===== TWO COLUMN GRID ===== -->
-    <div class="dash-grid">
-      <!-- LEFT: Điểm danh hôm nay -->
-      <div class="card">
+    <div class="dash-grid" id="dash-grid">
+      <!-- LEFT: Điểm danh hôm nay — chỉ admin -->
+      <div class="card" id="card-today-attendance">
         <div class="card-header">
           <h2>Điểm danh hôm nay</h2>
           <a href="attendance.html" class="btn btn-ghost btn-sm">Xem tất cả</a>
@@ -378,17 +378,28 @@
     else greeting = "Chào buổi tối";
 
     document.getElementById("greeting").textContent = greeting + ", " + currentUser.name;
-    document.getElementById("greeting-sub").textContent = 
+    document.getElementById("greeting-sub").textContent =
       currentUser.role === "admin" ? "Quản lý toàn bộ hệ thống" : "Quản lý thông tin cá nhân";
 
-    // Load employee map trước khi load các bảng
-    await loadEmployeeMap();
+    const isAdmin = currentUser.role === "admin";
+
+    // user: ẩn stat "Tổng nhân viên" + card điểm danh bên dưới
+    if (!isAdmin) {
+      document.getElementById("stat-card-employees").style.display = "none";
+      document.getElementById("card-today-attendance").style.display = "none";
+      // grid chỉ còn 1 cột → đơn nghỉ phép full width
+      document.getElementById("dash-grid").style.gridTemplateColumns = "1fr";
+    }
+
+    // admin mới cần employee map (để hiển thị tên trong bảng điểm danh)
+    if (isAdmin) await loadEmployeeMap();
+
     await loadStats();
-    await loadTodayAttendance();
+    if (isAdmin) await loadTodayAttendance();
     await loadPendingLeaves();
   }
 
-  // ===== LOAD EMPLOYEE MAP =====
+  // ===== LOAD EMPLOYEE MAP (chỉ admin dùng) =====
   async function loadEmployeeMap() {
     try {
       const res = await API.get("/auth/employees");
@@ -414,11 +425,19 @@
     const month = today.slice(0, 7);
 
     if (isAdmin) {
+      // admin: hiện tổng nhân viên + điểm danh hôm nay
       const empRes = await API.get("/auth/employees");
       if (empRes.success) {
         document.getElementById("stat-employees").textContent = empRes.data.length;
       }
 
+      const attRes = await API.get("/attendance?month=" + month);
+      if (attRes.success) {
+        const todayAtt    = attRes.data.filter(a => a.date === today);
+        const presentCount = todayAtt.filter(a => a.status === "present").length;
+        document.getElementById("stat-present").textContent = presentCount + "/" + todayAtt.length;
+      }
+
       const leaveRes = await API.get("/leave?status=pending");
       if (leaveRes.success) {
         document.getElementById("stat-pending").textContent = leaveRes.data.length;
@@ -426,12 +445,18 @@
 
       const salaryRes = await API.get("/salary?month=" + month);
       if (salaryRes.success) {
-        const total = salaryRes.data.reduce(function(sum, s) { return sum + s.total; }, 0);
+        const total = salaryRes.data.reduce((sum, s) => sum + s.total, 0);
         document.getElementById("stat-salary").textContent = formatMoney(total);
       }
+
     } else {
-      document.getElementById("stat-employees").textContent = "—";
-
+      // user: hiện điểm danh hôm nay của chính mình + đơn nghỉ + lương
+      const attRes = await API.get("/attendance?month=" + month);
+      if (attRes.success) {
+        const todayAtt     = attRes.data.filter(a => a.date === today);
+        const presentCount = todayAtt.filter(a => a.status === "present").length;
+        document.getElementById("stat-present").textContent = presentCount + "/" + todayAtt.length;
+      }
       const leaveRes = await API.get("/leave?status=pending");
       if (leaveRes.success) {
         document.getElementById("stat-pending").textContent = leaveRes.data.length;
@@ -439,16 +464,9 @@
 
       const salaryRes = await API.get("/salary?month=" + month);
       if (salaryRes.success) {
-        const total = salaryRes.data.reduce(function(sum, s) { return sum + s.total; }, 0);
-        document.getElementById("stat-salary").textContent = formatMoney(total);
+        const total = salaryRes.data.reduce((sum, s) => sum + s.total, 0);
+        document.getElementById("stat-salary").textContent = total > 0 ? formatMoney(total) : "—";
       }
-    }
-
-    const attRes = await API.get("/attendance?month=" + month);
-    if (attRes.success) {
-      const todayAtt = attRes.data.filter(function(a) { return a.date === today; });
-      const presentCount = todayAtt.filter(function(a) { return a.status === "present"; }).length;
-      document.getElementById("stat-present").textContent = presentCount + "/" + todayAtt.length;
     }
   }
 
@@ -464,7 +482,9 @@
         return;
       }
 
-      const todayAtt = res.data.filter(function(a) { return a.date === today; });
+      const todayAtt = res.data.filter(function(a) { 
+          return a.date === today && employeeMap[a.employee_id];
+      });
 
       if (todayAtt.length === 0) {
         container.innerHTML = '<div class="empty">Chưa có điểm danh hôm nay</div>';

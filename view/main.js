@@ -82,7 +82,7 @@ function showToast(message, type = "default") {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toast.className = "";
-  }, 2800);
+  }, 3000);
 }
 
 // =============================

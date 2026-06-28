@@ -6,12 +6,12 @@
 
 :root {
   --white:      #ffffff;
-  --bg:         #f6f7fb;       /* nền xám rất nhạt giống Quizlet */
+  --bg:         #f6f7fb;
   --surface:    #ffffff;
   --border:     #e4e7ec;
   --text:       #1a1d23;
   --muted:      #6b7280;
-  --accent:     #4255ff;       /* xanh tím Quizlet */
+  --accent:     #4255ff;
   --accent-h:   #3345e8;
   --green:      #23b26d;
   --red:        #e53935;
@@ -231,25 +231,41 @@ tr:hover td      { background: var(--bg); }
 .badge-blue   { background: #eef0ff; color: var(--accent); }
 .badge-gray   { background: #f1f2f4; color: var(--muted); }
 
-/* ===== TOAST ===== */
+/* ===== TOAST - GIỮA TRÊN CÙNG ===== */
 #toast {
   position: fixed;
-  top: 28px;
-  right: 28px;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--text);
   color: #fff;
-  padding: 12px 20px;
+  padding: 14px 28px;
   border-radius: var(--radius);
-  font-size: .9rem;
+  font-size: .95rem;
+  font-weight: 500;
   opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity .25s, transform .25s;
-  z-index: 999;
   pointer-events: none;
+  z-index: 999;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  transition: opacity .3s ease, transform .3s ease;
+  transform: translateX(-50%) translateY(-20px);
+  max-width: 90%;
+  text-align: center;
 }
-#toast.show { opacity: 1; transform: translateY(0); }
-#toast.success { background: var(--green); }
-#toast.error   { background: var(--red); }
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+#toast.success {
+  background: var(--green);
+}
+#toast.error {
+  background: var(--red);
+}
+#toast.warning {
+  background: var(--yellow);
+  color: #1a1d23;
+}
 
 /* ===== LOGIN PAGE ===== */
 .login-wrap {
